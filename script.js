@@ -1,62 +1,107 @@
+var conversation = [];
+
+
 function sendMessage() {
     var input = document.getElementById("userInput");
-    var chatBox = document.getElementById("chatBox");
+    var message = input.value.trim();
 
-    if (input.value.trim() === "") {
+    if (message === "") {
         return;
     }
+
+    conversation.push({
+        role: "user",
+        content: message
+    });
+
+    addMessage("You", message, "Y");
+
+    input.value = "";
+
+    showTyping();
+
+    setTimeout(function() {
+        hideTyping();
+
+        addMessage(
+            "Wor3do",
+            "I'm ready to chat with you. Soon I'll be connected to an AI model so we can talk about almost anything.",
+            "W"
+        );
+    }, 800);
+}
+
+
+function addMessage(name, text, letter) {
+    var chatBox = document.getElementById("chatBox");
 
     var message = document.createElement("div");
     message.className = "message";
 
     var avatar = document.createElement("div");
     avatar.className = "avatar";
-    avatar.textContent = "Y";
+    avatar.textContent = letter;
 
     var content = document.createElement("div");
     content.className = "message-content";
 
-    var name = document.createElement("strong");
-    name.textContent = "You";
+    var nameElement = document.createElement("strong");
+    nameElement.textContent = name;
 
-    var text = document.createElement("p");
-    text.textContent = input.value;
+    var textElement = document.createElement("p");
+    textElement.textContent = text;
 
-    content.appendChild(name);
-    content.appendChild(text);
+    content.appendChild(nameElement);
+    content.appendChild(textElement);
 
     message.appendChild(avatar);
     message.appendChild(content);
 
     chatBox.appendChild(message);
 
-    input.value = "";
+    window.scrollTo({
+        top: document.body.scrollHeight,
+        behavior: "smooth"
+    });
+}
 
-    setTimeout(function() {
-        var reply = document.createElement("div");
-        reply.className = "message";
 
-        var replyAvatar = document.createElement("div");
-        replyAvatar.className = "avatar";
-        replyAvatar.textContent = "W";
+function showTyping() {
+    var chatBox = document.getElementById("chatBox");
 
-        var replyContent = document.createElement("div");
-        replyContent.className = "message-content";
+    var typing = document.createElement("div");
+    typing.className = "message";
+    typing.id = "typing";
 
-        var replyName = document.createElement("strong");
-        replyName.textContent = "Wor3do";
+    var avatar = document.createElement("div");
+    avatar.className = "avatar";
+    avatar.textContent = "W";
 
-        var replyText = document.createElement("p");
-        replyText.textContent = "I received your message!";
+    var content = document.createElement("div");
+    content.className = "message-content";
 
-        replyContent.appendChild(replyName);
-        replyContent.appendChild(replyText);
+    var name = document.createElement("strong");
+    name.textContent = "Wor3do";
 
-        reply.appendChild(replyAvatar);
-        reply.appendChild(replyContent);
+    var text = document.createElement("p");
+    text.textContent = "Wor3do is thinking...";
 
-        chatBox.appendChild(reply);
-    }, 500);
+    content.appendChild(name);
+    content.appendChild(text);
+
+    typing.appendChild(avatar);
+    typing.appendChild(content);
+
+    chatBox.appendChild(typing);
+}
+
+
+function hideTyping() {
+    var typing = document.getElementById("typing");
+
+    if (typing) {
+        typing.remove();
+    }
 }
 
 
@@ -75,31 +120,13 @@ function imageSelected() {
         return;
     }
 
-    var chatBox = document.getElementById("chatBox");
+    var file = input.files[0];
 
-    var message = document.createElement("div");
-    message.className = "message";
-
-    var avatar = document.createElement("div");
-    avatar.className = "avatar";
-    avatar.textContent = "Y";
-
-    var content = document.createElement("div");
-    content.className = "message-content";
-
-    var name = document.createElement("strong");
-    name.textContent = "You";
-
-    var text = document.createElement("p");
-    text.textContent = "Image uploaded: " + input.files[0].name;
-
-    content.appendChild(name);
-    content.appendChild(text);
-
-    message.appendChild(avatar);
-    message.appendChild(content);
-
-    chatBox.appendChild(message);
+    addMessage(
+        "You",
+        "Uploaded image: " + file.name,
+        "Y"
+    );
 }
 
 
@@ -108,27 +135,11 @@ function newChat() {
 
     chatBox.innerHTML = "";
 
-    var message = document.createElement("div");
-    message.className = "message";
+    conversation = [];
 
-    var avatar = document.createElement("div");
-    avatar.className = "avatar";
-    avatar.textContent = "W";
-
-    var content = document.createElement("div");
-    content.className = "message-content";
-
-    var name = document.createElement("strong");
-    name.textContent = "Wor3do";
-
-    var text = document.createElement("p");
-    text.textContent = "Hi! I'm Wor3do. Tell me what you want to create.";
-
-    content.appendChild(name);
-    content.appendChild(text);
-
-    message.appendChild(avatar);
-    message.appendChild(content);
-
-    chatBox.appendChild(message);
+    addMessage(
+        "Wor3do",
+        "Hi! I'm Wor3do. What would you like to talk about?",
+        "W"
+    );
 }
