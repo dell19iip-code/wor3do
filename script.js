@@ -1,39 +1,61 @@
 function sendMessage() {
-    const input = document.getElementById("userInput");
-    const chatBox = document.getElementById("chatBox");
+    var input = document.getElementById("userInput");
+    var chatBox = document.getElementById("chatBox");
 
-    const message = input.value.trim();
-
-    if (message === "") {
+    if (input.value.trim() === "") {
         return;
     }
 
-    const userMessage = document.createElement("div");
-    userMessage.className = "message";
+    var message = document.createElement("div");
+    message.className = "message";
 
-    userMessage.innerHTML =
-     '<div class="avatar">Y</div>' +
-        '<div class="message-content">' +
-        '<strong>You</strong>' +
-        '<p>' + message + '</p>' +
-        '</div>';
+    var avatar = document.createElement("div");
+    avatar.className = "avatar";
+    avatar.textContent = "Y";
 
-    chatBox.appendChild(userMessage);
+    var content = document.createElement("div");
+    content.className = "message-content";
+
+    var name = document.createElement("strong");
+    name.textContent = "You";
+
+    var text = document.createElement("p");
+    text.textContent = input.value;
+
+    content.appendChild(name);
+    content.appendChild(text);
+
+    message.appendChild(avatar);
+    message.appendChild(content);
+
+    chatBox.appendChild(message);
 
     input.value = "";
 
-    setTimeout(function () {
-        const wor3doMessage = document.createElement("div");
-        wor3doMessage.className = "message wor3do-message";
+    setTimeout(function() {
+        var reply = document.createElement("div");
+        reply.className = "message";
 
-        wor3doMessage.innerHTML =
-            '<div class="avatar">W</div>' +
-            '<div class="message-content">' +
-            '<strong>Wor3do</strong>' +
-            '<p>I received your message!</p>' +
-            '</div>';
+        var replyAvatar = document.createElement("div");
+        replyAvatar.className = "avatar";
+        replyAvatar.textContent = "W";
 
-        chatBox.appendChild(wor3doMessage);
+        var replyContent = document.createElement("div");
+        replyContent.className = "message-content";
+
+        var replyName = document.createElement("strong");
+        replyName.textContent = "Wor3do";
+
+        var replyText = document.createElement("p");
+        replyText.textContent = "I received your message!";
+
+        replyContent.appendChild(replyName);
+        replyContent.appendChild(replyText);
+
+        reply.appendChild(replyAvatar);
+        reply.appendChild(replyContent);
+
+        chatBox.appendChild(reply);
     }, 500);
 }
 
@@ -47,37 +69,66 @@ function handleEnter(event) {
 
 
 function imageSelected() {
-    const input = document.getElementById("imageInput");
+    var input = document.getElementById("imageInput");
 
     if (input.files.length === 0) {
         return;
     }
 
-    const chatBox = document.getElementById("chatBox");
+    var chatBox = document.getElementById("chatBox");
 
-    const message = document.createElement("div");
+    var message = document.createElement("div");
     message.className = "message";
 
-    message.innerHTML =
-        '<div class="avatar">Y</div>' +
-        '<div class="message-content">' +
-        '<strong>You</strong>' +
-        '<p>Image uploaded: ' + input.files[0].name + '</p>' +
-        '</div>';
+    var avatar = document.createElement("div");
+    avatar.className = "avatar";
+    avatar.textContent = "Y";
+
+    var content = document.createElement("div");
+    content.className = "message-content";
+
+    var name = document.createElement("strong");
+    name.textContent = "You";
+
+    var text = document.createElement("p");
+    text.textContent = "Image uploaded: " + input.files[0].name;
+
+    content.appendChild(name);
+    content.appendChild(text);
+
+    message.appendChild(avatar);
+    message.appendChild(content);
 
     chatBox.appendChild(message);
 }
 
 
 function newChat() {
-    const chatBox = document.getElementById("chatBox");
+    var chatBox = document.getElementById("chatBox");
 
-    chatBox.innerHTML =
-        '<div class="message wor3do-message">' +
-        '<div class="avatar">W</div>' +
-        '<div class="message-content">' +
-        '<strong>Wor3do</strong>' +
-        '<p>Hi! I\'m Wor3do. Tell me what you want to create.</p>' +
-        '</div>' +
-        '</div>';
+    chatBox.innerHTML = "";
+
+    var message = document.createElement("div");
+    message.className = "message";
+
+    var avatar = document.createElement("div");
+    avatar.className = "avatar";
+    avatar.textContent = "W";
+
+    var content = document.createElement("div");
+    content.className = "message-content";
+
+    var name = document.createElement("strong");
+    name.textContent = "Wor3do";
+
+    var text = document.createElement("p");
+    text.textContent = "Hi! I'm Wor3do. Tell me what you want to create.";
+
+    content.appendChild(name);
+    content.appendChild(text);
+
+    message.appendChild(avatar);
+    message.appendChild(content);
+
+    chatBox.appendChild(message);
 }
