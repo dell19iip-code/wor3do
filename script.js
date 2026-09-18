@@ -4,44 +4,47 @@ function sendMessage() {
 
     const message = input.value.trim();
 
-    if (message === "") {
-        return;
-    }
+    if (!message) return;
 
     const userMessage = document.createElement("div");
     userMessage.className = "message";
 
-    userMessage.innerHTML = 
-        <div class="avatar">Y</div>
-        <div class="message-content">
-            <strong>You</strong>
-            <p>${message}</p>
-        </div>
-    ;
+    const avatar = document.createElement("div");
+    avatar.className = "avatar";
+    avatar.textContent = "Y";
+
+    const content = document.createElement("div");
+    content.className = "message-content";
+
+    const name = document.createElement("strong");
+    name.textContent = "You";
+
+    const text = document.createElement("p");
+    text.textContent = message;
+
+    content.appendChild(name);
+    content.appendChild(text);
+
+    userMessage.appendChild(avatar);
+    userMessage.appendChild(content);
 
     chatBox.appendChild(userMessage);
 
     input.value = "";
 
-    setTimeout(() => {
-        const wor3doMessage = document.createElement("div");
-        wor3doMessage.className = "message wor3do-message";
+    setTimeout(function () {
+        const reply = document.createElement("div");
+        reply.className = "message wor3do-message";
 
-        wor3doMessage.innerHTML = 
+        reply.innerHTML = 
             <div class="avatar">W</div>
             <div class="message-content">
                 <strong>Wor3do</strong>
-                <p>I received your message. AI features are coming soon!</p>
+                <p>I received your message! 🚀</p>
             </div>
         ;
 
-        chatBox.appendChild(wor3doMessage);
-
-        window.scrollTo({
-            top: document.body.scrollHeight,
-            behavior: "smooth"
-        });
-
+        chatBox.appendChild(reply);
     }, 500);
 }
 
@@ -57,24 +60,22 @@ function handleEnter(event) {
 function imageSelected() {
     const input = document.getElementById("imageInput");
 
-    if (input.files.length > 0) {
-        const fileName = input.files[0].name;
+    if (input.files.length === 0) return;
 
-        const chatBox = document.getElementById("chatBox");
+    const chatBox = document.getElementById("chatBox");
 
-        const message = document.createElement("div");
-        message.className = "message";
+    const message = document.createElement("div");
+    message.className = "message";
 
-        message.innerHTML = 
-            <div class="avatar">Y</div>
-            <div class="message-content">
-                <strong>You</strong>
-                <p>📷 Uploaded: ${fileName}</p>
-            </div>
-        ;
+    message.innerHTML = 
+        <div class="avatar">Y</div>
+        <div class="message-content">
+            <strong>You</strong>
+            <p>📷 Image uploaded: ${input.files[0].name}</p>
+        </div>
+    ;
 
-        chatBox.appendChild(message);
-    }
+    chatBox.appendChild(message);
 }
 
 
@@ -86,9 +87,7 @@ function newChat() {
             <div class="avatar">W</div>
             <div class="message-content">
                 <strong>Wor3do</strong>
-                <p>
-                    Hi! I'm Wor3do. Tell me what you want to create.
-                </p>
+                <p>Hi! I'm Wor3do. Tell me what you want to create.</p>
             </div>
         </div>
     ;
