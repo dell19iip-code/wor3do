@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Wor3do - Create Anything</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <header class="header">
+        <div class="logo">wor3do</div>
+
+        <button class="new-chat" onclick="newChat()">
+            + New Chat
+        </button>
+    </header>
+
+
+    <main class="main">
+
+        <section class="welcome">
+            <h1>What can I create for you?</h1>
+
+            <p>
+                Chat with Wor3do, turn your ideas into short videos,
+                or upload an image to get started.
+            </p>
+        </section>
+
+
+        <section class="chat-box" id="chatBox">
+
+            <div class="message wor3do-message">
+                <div class="avatar">W</div>
+
+                <div class="message-content">
+                    <strong>Wor3do</strong>
+                    <p>
+                        Hi! I'm Wor3do. Tell me what you want to create.
+                    </p>
+                </div>
+            </div>
+
+        </section>
+
+
+        <section class="input-area">
+
+            <div class="input-container">
+
+                <button class="upload-button" onclick="document.getElementById('imageInput').click()">
+                    +
+                </button>
+
+                <input
+                    type="file"
+                    id="imageInput"
+                    accept="image/*"
+                    hidden
+                    onchange="imageSelected()"
+                >
+
+                <textarea
+                    id="userInput"
+                    placeholder="Message Wor3do..."
+                    rows="1"
+                    onkeydown="handleEnter(event)"
+                ></textarea>
+
+                <button class="send-button" onclick="sendMessage()">
+                    ↑
+                </button>
+
+            </div>
+
+            <div class="hint">
+                Wor3do can help you create text, images and short videos.
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <script src="script.js"></script>
+
+</body>
+</html>
