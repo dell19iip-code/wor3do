@@ -12,7 +12,7 @@ function sendMessage() {
     userMessage.className = "message";
 
     userMessage.innerHTML =
-        '<div class="avatar">Y</div>' +
+     '<div class="avatar">Y</div>' +
         '<div class="message-content">' +
         '<strong>You</strong>' +
         '<p>' + message + '</p>' +
