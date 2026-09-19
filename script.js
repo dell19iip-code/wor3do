@@ -1,7 +1,9 @@
 var conversation = [];
 
+var WORKER_URL = "https://lingering-silence-36cd.dell19iip.workers.dev/";
 
-function sendMessage() {
+
+async function sendMessage() {
     var input = document.getElementById("userInput");
     var message = input.value.trim();
 
@@ -20,15 +22,40 @@ function sendMessage() {
 
     showTyping();
 
-    setTimeout(function() {
+    try {
+        var response = await fetch(WORKER_URL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                message: message
+            })
+        });
+
+        var data = await response.json();
+
+        hideTyping();
+
+        if (data.output_text) {
+            addMessage("Wor3do", data.output_text, "W");
+        } else if (data.error) {
+            addMessage("Wor3do", "Error: " + data.error, "W");
+        } else {
+            addMessage("Wor3do", "I received an unexpected response.", "W");
+        }
+
+    } catch (error) {
         hideTyping();
 
         addMessage(
             "Wor3do",
-            "I'm ready to chat with you. Soon I'll be connected to an AI model so we can talk about almost anything.",
+            "I couldn't connect to the AI server.",
             "W"
         );
-    }, 800);
+
+        console.error(error);
+    }
 }
 
 
