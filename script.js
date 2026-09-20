@@ -11,6 +11,85 @@ async function sendMessage() {
         return;
     }
 
+    // Add user's message to conversation
+    conversation.push({
+        role: "user",
+        content: message
+    });
+
+    addMessage("You", message, "Y");
+
+    input.value = "";
+
+    showTyping();
+
+    try {
+        var response = await fetch(WORKER_URL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                messages: conversation
+            })
+        });
+
+        var data = await response.json();
+
+        hideTyping();
+
+        if (data.output_text) {
+
+            // IMPORTANT:
+            // Save Wor3do's answer into the conversation
+            conversation.push({
+                role: "assistant",
+                content: data.output_text
+            });
+
+            addMessage(
+                "Wor3do",
+                data.output_text,
+                "W"
+            );
+
+        } else if (data.error) {
+
+            addMessage(
+                "Wor3do",
+                "Error: " + data.error,
+                "W"
+            );
+
+        } else {
+
+            addMessage(
+                "Wor3do",
+                "I received an unexpected response.",
+                "W"
+            );
+        }
+
+    } catch (error) {
+
+        hideTyping();
+
+        addMessage(
+            "Wor3do",
+            "I couldn't connect to the AI server.",
+            "W"
+        );
+
+        console.error(error);
+    }
+}
+    var input = document.getElementById("userInput");
+    var message = input.value.trim();
+
+    if (message === "") {
+        return;
+    }
+
     conversation.push({
         role: "user",
         content: message
