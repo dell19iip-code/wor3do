@@ -2,7 +2,6 @@ var conversation = [];
 
 var WORKER_URL = "https://lingering-silence-36cd.dell19iip.workers.dev/";
 
-
 async function sendMessage() {
     var input = document.getElementById("userInput");
     var message = input.value.trim();
@@ -11,16 +10,22 @@ async function sendMessage() {
         return;
     }
 
-    // Add user's message to conversation
+    // Prevent sending another message while waiting
+    input.disabled = true;
+
+    // Add user's message to memory
     conversation.push({
         role: "user",
         content: message
     });
 
+    // Show user's message
     addMessage("You", message, "Y");
 
+    // Clear input
     input.value = "";
 
+    // Show thinking indicator
     showTyping();
 
     try {
@@ -38,10 +43,25 @@ async function sendMessage() {
 
         hideTyping();
 
+        // Handle HTTP errors
+        if (!response.ok) {
+            addMessage(
+                "Wor3do",
+                "Error: " + (data.error || "The AI server returned an error."),
+                "W"
+            );
+
+            // Remove the user's message if the request failed
+            conversation.pop();
+
+            return;
+        }
+
+        // Successful AI response
         if (data.output_text) {
 
             // IMPORTANT:
-            // Save Wor3do's answer into the conversation
+            // Save Wor3do's response so future messages have memory
             conversation.push({
                 role: "assistant",
                 content: data.output_text
@@ -61,6 +81,8 @@ async function sendMessage() {
                 "W"
             );
 
+            conversation.pop();
+
         } else {
 
             addMessage(
@@ -68,6 +90,8 @@ async function sendMessage() {
                 "I received an unexpected response.",
                 "W"
             );
+
+            conversation.pop();
         }
 
     } catch (error) {
@@ -80,68 +104,26 @@ async function sendMessage() {
             "W"
         );
 
-        console.error(error);
-    }
-}
-    var input = document.getElementById("userInput");
-    var message = input.value.trim();
+        // Remove failed user message from memory
+        conversation.pop();
 
-    if (message === "") {
-        return;
-    }
+        console.error("Wor3do connection error:", error);
 
-    conversation.push({
-        role: "user",
-        content: message
-    });
+    } finally {
 
-    addMessage("You", message, "Y");
-
-    input.value = "";
-
-    showTyping();
-
-    try {
-        var response = await fetch(WORKER_URL, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-    messages: conversation
-})
-                message: message
-            })
-        });
-
-        var data = await response.json();
-
-        hideTyping();
-
-        if (data.output_text) {
-            addMessage("Wor3do", data.output_text, "W");
-        } else if (data.error) {
-            addMessage("Wor3do", "Error: " + data.error, "W");
-        } else {
-            addMessage("Wor3do", "I received an unexpected response.", "W");
-        }
-
-    } catch (error) {
-        hideTyping();
-
-        addMessage(
-            "Wor3do",
-            "I couldn't connect to the AI server.",
-            "W"
-        );
-
-        console.error(error);
+        // Allow the user to send another message
+        input.disabled = false;
+        input.focus();
     }
 }
 
 
 function addMessage(name, text, letter) {
     var chatBox = document.getElementById("chatBox");
+
+    if (!chatBox) {
+        return;
+    }
 
     var message = document.createElement("div");
     message.className = "message";
@@ -167,6 +149,7 @@ function addMessage(name, text, letter) {
 
     chatBox.appendChild(message);
 
+    // Scroll to newest message
     window.scrollTo({
         top: document.body.scrollHeight,
         behavior: "smooth"
@@ -177,6 +160,15 @@ function addMessage(name, text, letter) {
 function showTyping() {
     var chatBox = document.getElementById("chatBox");
 
+    if (!chatBox) {
+        return;
+    }
+
+    // Don't create duplicates
+    if (document.getElementById("typing")) {
+        return;
+    }
+
     var typing = document.createElement("div");
     typing.className = "message";
     typing.id = "typing";
@@ -186,8 +178,6 @@ function showTyping() {
     avatar.textContent = "W";
 
     var content = document.createElement("div");
-    content.className = "message-content";
-
     var name = document.createElement("strong");
     name.textContent = "Wor3do";
 
@@ -201,6 +191,11 @@ function showTyping() {
     typing.appendChild(content);
 
     chatBox.appendChild(typing);
+
+    window.scrollTo({
+        top: document.body.scrollHeight,
+        behavior: "smooth"
+    });
 }
 
 
@@ -224,7 +219,7 @@ function handleEnter(event) {
 function imageSelected() {
     var input = document.getElementById("imageInput");
 
-    if (input.files.length === 0) {
+    if (!input || input.files.length === 0) {
         return;
     }
 
@@ -241,13 +236,18 @@ function imageSelected() {
 function newChat() {
     var chatBox = document.getElementById("chatBox");
 
-    chatBox.innerHTML = "";
-
+    // Clear conversation memory
     conversation = [];
 
+    if (chatBox) {
+        chatBox.innerHTML = "";
+    }
+
+    // Start fresh conversation
     addMessage(
         "Wor3do",
         "Hi! I'm Wor3do. What would you like to talk about?",
         "W"
     );
 }
+    content.className = "message-content";
