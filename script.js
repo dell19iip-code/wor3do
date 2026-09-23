@@ -2,12 +2,13 @@
 
 const WORKER_URL = "https://lingering-silence-36cd.dell19iip.workers.dev/";
 
-const STORAGE_KEYS = {
-    conversation: "wor3do_conversation_v4",
-    courses: "wor3do_courses_v4",
-    profile: "wor3do_profile_v4",
-    settings: "wor3do_settings_v4",
-    posts: "wor3do_posts_v4"
+const STORAGE = {
+    conversation: "wor3do_conversation_v5",
+    courses: "wor3do_courses_v5",
+    profile: "wor3do_profile_v5",
+    settings: "wor3do_settings_v5",
+    posts: "wor3do_posts_v5",
+    interests: "wor3do_explore_interests_v2"
 };
 
 const DEFAULT_SETTINGS = {
@@ -19,76 +20,97 @@ const DEFAULT_SETTINGS = {
 };
 
 const DEFAULT_PROFILE = {
-    name: "",
+    name: "Wor3do User",
     about: ""
 };
 
+const REELS = [
+    {
+        id: "ai-1",
+        category: "technology",
+        title: "Interesting things you didn't know about AI",
+        description: "Discover interesting ideas, tools, and developments in artificial intelligence.",
+        creator: "AI Daily",
+        creatorInitial: "A",
+        tag: "AI • Technology",
+        style: "one"
+    },
+    {
+        id: "ai-2",
+        category: "business",
+        title: "How people are building businesses with AI",
+        description: "Ideas and strategies for building products and businesses with artificial intelligence.",
+        creator: "Build With AI",
+        creatorInitial: "B",
+        tag: "Business • AI",
+        style: "two"
+    },
+    {
+        id: "ai-3",
+        category: "learning",
+        title: "Learn something useful in 60 seconds",
+        description: "Short educational content selected according to the topics you interact with.",
+        creator: "Learn Fast",
+        creatorInitial: "L",
+        tag: "Learning • Science",
+        style: "three"
+    },
+    {
+        id: "ai-4",
+        category: "creative",
+        title: "How AI is changing creative work",
+        description: "Explore new ways artificial intelligence is being used for design, writing, and creative work.",
+        creator: "Creative AI",
+        creatorInitial: "C",
+        tag: "Creative • AI",
+        style: "four"
+    },
+    {
+        id: "ai-5",
+        category: "technology",
+        title: "The future of AI assistants",
+        description: "A quick look at how personal AI assistants are evolving.",
+        creator: "Future Lab",
+        creatorInitial: "F",
+        tag: "Technology • Future",
+        style: "two"
+    },
+    {
+        id: "ai-6",
+        category: "business",
+        title: "Small ideas that can become useful products",
+        description: "Think about real problems people have and turn them into valuable solutions.",
+        creator: "Build Better",
+        creatorInitial: "B",
+        tag: "Business • Startups",
+        style: "three"
+    }
+];
+
 const DEFAULT_POSTS = [
     {
-        id: "p1",
+        id: "post-1",
         name: "Alex",
         avatar: "A",
         time: "2h ago",
-        title: "How I learned Python with AI",
-        body: "I used AI to create a learning plan and practice every day.",
-        category: "learning",
-        likes: 124,
-        comments: 18
+        text: "I used AI to create a learning plan and practice every day.",
+        likes: 124
     },
     {
-        id: "p2",
+        id: "post-2",
         name: "Maria",
         avatar: "M",
         time: "5h ago",
-        title: "My complete photography course",
-        body: "Built my first course with Wor3do. Starting from the basics.",
-        category: "learning",
-        likes: 89,
-        comments: 12
+        text: "Built my first complete course with Wor3do. Starting from the basics.",
+        likes: 89
     },
     {
-        id: "p3",
+        id: "post-3",
         name: "James",
         avatar: "J",
         time: "1d ago",
-        title: "Understanding the universe",
-        body: "A simple explanation of black holes, galaxies, and space.",
-        category: "popular",
-        likes: 201,
-        comments: 31
-    },
-    {
-        id: "p4",
-        name: "Emma",
-        avatar: "N",
-        time: "1d ago",
-        title: "A visual study system that actually works",
-        body: "I turned my notes into a simple weekly workflow and creative dashboard.",
-        category: "creative",
-        likes: 76,
-        comments: 9
-    },
-    {
-        id: "p5",
-        name: "Sam",
-        avatar: "S",
-        time: "2d ago",
-        title: "My first AI project",
-        body: "Started with one idea, tested it with AI, and shipped a working prototype.",
-        category: "popular",
-        likes: 153,
-        comments: 24
-    },
-    {
-        id: "p6",
-        name: "Lina",
-        avatar: "L",
-        time: "3d ago",
-        title: "30 days of learning design",
-        body: "A practical learning path for beginners who want to understand design fundamentals.",
-        category: "learning",
-        likes: 67,
-        comments: 7
+        text: "A simple explanation of black holes, galaxies, and space can make difficult topics feel much easier.",
+        likes: 201
     }
 ];
 
@@ -97,282 +119,208 @@ let courses = [];
 let posts = [];
 let profile = { ...DEFAULT_PROFILE };
 let settings = { ...DEFAULT_SETTINGS };
+let interests = "";
 let selectedImage = null;
+let currentCategory = "for-you";
 let isSending = false;
-let currentCategory = "all";
+let activeModal = null;
 let toastTimer = null;
 
-window.addEventListener("DOMContentLoaded", init);
+const $ = selector => document.querySelector(selector);
+
+const $$ = selector => [
+    ...document.querySelectorAll(selector)
+];
+
+document.addEventListener("DOMContentLoaded", init);
 
 function init() {
     loadState();
+
     bindNavigation();
-    bindComposer();
-    bindCourseCreator();
+    bindChat();
     bindExplore();
+    bindCourses();
     bindSettings();
     bindModals();
+
     applyTheme();
-    updateProfileUI();
+    updateProfile();
     renderConversation();
+    renderExplore();
     renderCourses();
-    renderPosts();
 }
 
 function bindNavigation() {
-    document.querySelectorAll("[data-page]").forEach(element => {
+    $$(".nav-item").forEach(button => {
+        button.addEventListener("click", () => {
+            switchPage(button.dataset.page);
+        });
+    });
+
+    $$("[data-page]").forEach(element => {
+        if (element.classList.contains("nav-item")) {
+            return;
+        }
+
         element.addEventListener("click", event => {
-            const page = element.dataset.page;
-
-            if (!page) {
-                return;
-            }
-
-            if (element.tagName === "A") {
-                event.preventDefault();
-            }
-
-            showPage(page);
-        });
-    });
-
-    document.getElementById("newChatButton").addEventListener("click", newChat);
-
-    document.getElementById("mobileNewChatButton").addEventListener("click", newChat);
-
-    document.getElementById("profileShortcut").addEventListener("click", () => {
-        showPage("settings");
-        setSettingsPanel("profile");
-    });
-
-    document.getElementById("openSidebarButton").addEventListener("click", openSidebar);
-
-    document.getElementById("mobileOverlay").addEventListener("click", closeSidebar);
-}
-
-function bindComposer() {
-    const input = document.getElementById("userInput");
-    const imageInput = document.getElementById("imageInput");
-
-    document.getElementById("attachButton").addEventListener("click", () => {
-        imageInput.click();
-    });
-
-    document.getElementById("sendButton").addEventListener("click", sendMessage);
-
-    input.addEventListener("input", () => {
-        resizeTextarea(input);
-    });
-
-    input.addEventListener("keydown", event => {
-        if (event.key !== "Enter") {
-            return;
-        }
-
-        if (event.shiftKey) {
-            return;
-        }
-
-        event.preventDefault();
-
-        if (!isSending) {
-            sendMessage();
-        }
-    });
-
-    imageInput.addEventListener("change", handleImageSelection);
-}
-
-function bindCourseCreator() {
-    document
-        .getElementById("openCourseCreatorButton")
-        .addEventListener("click", openCourseCreator);
-
-    document
-        .getElementById("closeCourseCreatorButton")
-        .addEventListener("click", closeCourseCreator);
-
-    document
-        .getElementById("courseForm")
-        .addEventListener("submit", event => {
             event.preventDefault();
-            createCourse();
+            switchPage(element.dataset.page);
         });
-}
-
-function bindExplore() {
-    document
-        .getElementById("exploreTabs")
-        .addEventListener("click", event => {
-            const tab = event.target.closest("[data-category]");
-
-            if (!tab) {
-                return;
-            }
-
-            currentCategory = tab.dataset.category;
-
-            document
-                .querySelectorAll("#exploreTabs .tab")
-                .forEach(button => {
-                    button.classList.toggle(
-                        "active",
-                        button === tab
-                    );
-                });
-
-            renderPosts();
-        });
-
-    document
-        .getElementById("createPostButton")
-        .addEventListener("click", () => {
-            openModal("postModal");
-        });
-
-    document
-        .getElementById("postForm")
-        .addEventListener("submit", event => {
-            event.preventDefault();
-            publishPost();
-        });
-}
-
-function bindSettings() {
-    document
-        .querySelectorAll("[data-settings-panel]")
-        .forEach(button => {
-            button.addEventListener("click", () => {
-                setSettingsPanel(
-                    button.dataset.settingsPanel
-                );
-            });
-        });
-
-    document
-        .querySelectorAll("[data-toggle-key]")
-        .forEach(button => {
-            button.addEventListener("click", () => {
-                toggleSetting(
-                    button.dataset.toggleKey
-                );
-            });
-        });
-
-    document
-        .querySelectorAll("[data-theme]")
-        .forEach(button => {
-            button.addEventListener("click", () => {
-                settings.theme = button.dataset.theme;
-                saveSettings();
-                applyTheme();
-                showToast(
-                    `${capitalize(settings.theme)} theme enabled.`
-                );
-            });
-        });
-
-    document
-        .getElementById("saveProfileButton")
-        .addEventListener("click", saveProfile);
-
-    document
-        .getElementById("clearLocalDataButton")
-        .addEventListener("click", clearLocalData);
-}
-
-function bindModals() {
-    document
-        .querySelectorAll("[data-close-modal]")
-        .forEach(button => {
-            button.addEventListener("click", () => {
-                closeModal(button.dataset.closeModal);
-            });
-        });
-
-    document
-        .querySelectorAll(".modal-backdrop")
-        .forEach(backdrop => {
-            backdrop.addEventListener("click", event => {
-                if (event.target === backdrop) {
-                    closeModal(backdrop.id);
-                }
-            });
-        });
-
-    document.addEventListener("keydown", event => {
-        if (event.key !== "Escape") {
-            return;
-        }
-
-        closeSidebar();
-
-        document
-            .querySelectorAll(".modal-backdrop.visible")
-            .forEach(modal => {
-                closeModal(modal.id);
-            });
     });
+
+    $("#newChatButton")?.addEventListener(
+        "click",
+        newChat
+    );
+
+    $("#mobileNewChatButton")?.addEventListener(
+        "click",
+        newChat
+    );
+
+    $("#profileShortcut")?.addEventListener(
+        "click",
+        () => {
+            switchPage("settings");
+            setSettingsTab("profile");
+        }
+    );
+
+    $("#mobileMenuButton")?.addEventListener(
+        "click",
+        toggleMobileSidebar
+    );
+
+    $("#mobileOverlay")?.addEventListener(
+        "click",
+        closeMobileSidebar
+    );
 }
 
-function showPage(page) {
-    document
-        .querySelectorAll("[data-page-section]")
-        .forEach(section => {
-            section.classList.toggle(
-                "active",
-                section.dataset.pageSection === page
-            );
-        });
+function switchPage(page) {
+    if (!page) {
+        return;
+    }
 
-    document
-        .querySelectorAll(".nav-item[data-page]")
-        .forEach(button => {
-            button.classList.toggle(
-                "active",
-                button.dataset.page === page
-            );
-        });
+    $$(".page").forEach(section => {
+        section.classList.toggle(
+            "active",
+            section.dataset.pageSection === page
+        );
+    });
 
-    closeSidebar();
+    $$(".nav-item").forEach(button => {
+        const active =
+            button.dataset.page === page;
+
+        button.classList.toggle(
+            "active",
+            active
+        );
+
+        if (active) {
+            button.setAttribute(
+                "aria-current",
+                "page"
+            );
+        } else {
+            button.removeAttribute(
+                "aria-current"
+            );
+        }
+    });
+
+    closeMobileSidebar();
 
     if (page === "chat") {
         setTimeout(() => {
-            document.getElementById("userInput").focus();
+            $("#userInput")?.focus();
         }, 0);
     }
 }
 
-function openSidebar() {
-    document
-        .getElementById("sidebar")
-        .classList.add("open");
+function toggleMobileSidebar() {
+    const sidebar = $("#sidebar");
+    const overlay = $("#mobileOverlay");
+    const button = $("#mobileMenuButton");
 
-    document
-        .getElementById("mobileOverlay")
-        .classList.add("visible");
+    sidebar?.classList.toggle("open");
+    overlay?.classList.toggle("open");
+
+    const open =
+        sidebar?.classList.contains("open") || false;
+
+    button?.setAttribute(
+        "aria-expanded",
+        String(open)
+    );
 }
 
-function closeSidebar() {
-    document
-        .getElementById("sidebar")
-        .classList.remove("open");
+function closeMobileSidebar() {
+    $("#sidebar")?.classList.remove("open");
+    $("#mobileOverlay")?.classList.remove("open");
 
-    document
-        .getElementById("mobileOverlay")
-        .classList.remove("visible");
+    $("#mobileMenuButton")?.setAttribute(
+        "aria-expanded",
+        "false"
+    );
+}
+
+function bindChat() {
+    $("#chatComposer")?.addEventListener(
+        "submit",
+        event => {
+            event.preventDefault();
+
+            if (!isSending) {
+                sendMessage();
+            }
+        }
+    );
+
+    $("#userInput")?.addEventListener(
+        "input",
+        resizeInput
+    );
+
+    $("#userInput")?.addEventListener(
+        "keydown",
+        event => {
+            if (
+                event.key === "Enter" &&
+                !event.shiftKey
+            ) {
+                event.preventDefault();
+
+                if (!isSending) {
+                    $("#chatComposer")?.requestSubmit();
+                }
+            }
+        }
+    );
+
+    $("#attachButton")?.addEventListener(
+        "click",
+        () => {
+            $("#imageInput")?.click();
+        }
+    );
+
+    $("#imageInput")?.addEventListener(
+        "change",
+        handleImageUpload
+    );
 }
 
 async function sendMessage() {
-    if (isSending) {
+    const input = $("#userInput");
+
+    if (!input || isSending) {
         return;
     }
 
-    const input =
-        document.getElementById("userInput");
-
-    const text =
-        input.value.trim();
+    const text = input.value.trim();
 
     if (!text && !selectedImage) {
         input.focus();
@@ -380,8 +328,7 @@ async function sendMessage() {
     }
 
     isSending = true;
-
-    setComposerLoading(true);
+    setChatLoading(true);
 
     const userMessage = {
         role: "user",
@@ -392,25 +339,33 @@ async function sendMessage() {
 
     try {
         if (selectedImage) {
-            userMessage.image =
-                await prepareImage(selectedImage);
+            userMessage.image = selectedImage;
         }
 
         conversation.push(userMessage);
 
         trimConversation();
-        persistConversation();
+        saveConversation();
 
         clearComposer();
         renderConversation();
-        addTypingIndicator();
 
-        const payload = {
-            messages:
-                conversation.map(message => ({
-                    ...message
-                }))
-        };
+        const loadingId =
+            addLoadingMessage();
+
+        const messages =
+            conversation
+                .slice(-30)
+                .map(message => ({
+                    role: message.role,
+                    content: message.content,
+                    ...(message.image
+                        ? {
+                              image:
+                                  message.image
+                          }
+                        : {})
+                }));
 
         const response =
             await fetchWithTimeout(
@@ -418,10 +373,14 @@ async function sendMessage() {
                 {
                     method: "POST",
                     headers: {
-                        "Content-Type": "application/json",
-                        "Accept": "application/json"
+                        "Content-Type":
+                            "application/json",
+                        "Accept":
+                            "application/json"
                     },
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify({
+                        messages
+                    })
                 },
                 60000
             );
@@ -429,11 +388,15 @@ async function sendMessage() {
         const data =
             await parseResponse(response);
 
+        removeLoadingMessage(
+            loadingId
+        );
+
         if (!response.ok) {
             throw new Error(
                 data?.error ||
                 data?.message ||
-                `Request failed with status ${response.status}.`
+                `AI request failed with status ${response.status}.`
             );
         }
 
@@ -452,110 +415,144 @@ async function sendMessage() {
         });
 
         trimConversation();
-        persistConversation();
+        saveConversation();
+
         renderConversation();
     } catch (error) {
-        removeTypingIndicator();
-
-        const message =
-            friendlyError(error);
+        removeAllLoadingMessages();
 
         conversation.push({
             role: "assistant",
             content:
-                `I couldn't complete that request.\n\n${message}`
+                `I couldn't complete that request.\n\n${friendlyError(error)}`
         });
 
         trimConversation();
-        persistConversation();
+        saveConversation();
+
         renderConversation();
     } finally {
         isSending = false;
+        setChatLoading(false);
 
-        setComposerLoading(false);
-
-        removeTypingIndicator();
-
-        input.focus();
+        setTimeout(() => {
+            $("#userInput")?.focus();
+        }, 0);
     }
 }
 
+function setChatLoading(loading) {
+    const sendButton =
+        $("#sendButton");
+
+    const attachButton =
+        $("#attachButton");
+
+    const input =
+        $("#userInput");
+
+    sendButton?.classList.toggle(
+        "loading",
+        loading
+    );
+
+    sendButton &&
+        (sendButton.disabled = loading);
+
+    attachButton &&
+        (attachButton.disabled = loading);
+
+    input &&
+        (input.disabled = loading);
+}
+
 function renderConversation() {
-    const chatBox =
-        document.getElementById("chatBox");
+    const box =
+        $("#chatBox");
+
+    if (!box) {
+        return;
+    }
+
+    box.innerHTML = "";
 
     if (!conversation.length) {
-        chatBox.innerHTML = `
-            <div class="welcome-card">
-                <span class="welcome-icon">W</span>
+        const welcome =
+            document.createElement(
+                "div"
+            );
 
-                <div class="eyebrow">
-                    Your AI workspace
-                </div>
+        welcome.className =
+            "welcome-card";
 
-                <h2>
-                    What can I help you with?
-                </h2>
+        welcome.innerHTML = `
+            <div class="welcome-icon">W</div>
 
-                <p>
-                    Ask questions, learn something new,
-                    plan a project, write, analyze,
-                    or simply talk.
-                </p>
+            <div class="page-eyebrow">
+                AI WORKSPACE
+            </div>
 
-                <div class="suggestions">
-                    <button
-                        type="button"
-                        data-suggestion="Explain quantum mechanics simply"
-                    >
-                        Explain something
-                    </button>
+            <h2>
+                What can I help you with?
+            </h2>
 
-                    <button
-                        type="button"
-                        data-suggestion="Help me learn a new skill"
-                    >
-                        Learn a skill
-                    </button>
+            <p>
+                Ask Wor3do to explain something,
+                write, plan, brainstorm, analyze,
+                or help you learn.
+            </p>
 
-                    <button
-                        type="button"
-                        data-suggestion="Give me some creative ideas"
-                    >
-                        Get ideas
-                    </button>
+            <div class="welcome-suggestions">
+                <button
+                    type="button"
+                    data-suggestion="Explain quantum mechanics simply"
+                >
+                    Explain something
+                </button>
 
-                    <button
-                        type="button"
-                        data-suggestion="Help me build a complete course"
-                    >
-                        Build a course
-                    </button>
-                </div>
+                <button
+                    type="button"
+                    data-suggestion="Help me learn a new skill"
+                >
+                    Learn a skill
+                </button>
 
-                <div class="quick-features">
-                    <span>⚡ Fast conversations</span>
-                    <span>◈ Image analysis</span>
-                    <span>▣ Course creation</span>
-                </div>
+                <button
+                    type="button"
+                    data-suggestion="Give me some creative ideas"
+                >
+                    Get ideas
+                </button>
+
+                <button
+                    type="button"
+                    data-suggestion="Help me create a complete course"
+                >
+                    Build a course
+                </button>
             </div>
         `;
 
-        chatBox
-            .querySelectorAll("[data-suggestion]")
+        box.appendChild(welcome);
+
+        $$(".welcome-suggestions [data-suggestion]")
             .forEach(button => {
                 button.addEventListener(
                     "click",
                     () => {
                         const input =
-                            document.getElementById(
-                                "userInput"
-                            );
+                            $("#userInput");
+
+                        if (!input) {
+                            return;
+                        }
 
                         input.value =
                             button.dataset.suggestion;
 
-                        resizeTextarea(input);
+                        resizeInput({
+                            target: input
+                        });
 
                         input.focus();
                     }
@@ -565,184 +562,275 @@ function renderConversation() {
         return;
     }
 
-    chatBox.innerHTML = "";
-
     conversation.forEach(message => {
-        const wrapper =
-            document.createElement("article");
-
-        wrapper.className =
-            `message ${
-                message.role === "user"
-                    ? "user-message"
-                    : "ai-message"
-            }`;
-
-        const avatar =
-            document.createElement("div");
-
-        avatar.className =
-            "message-avatar";
-
-        avatar.textContent =
-            message.role === "user"
-                ? "U"
-                : "W";
-
-        const content =
-            document.createElement("div");
-
-        content.className =
-            "message-content";
-
-        const meta =
-            document.createElement("div");
-
-        meta.className =
-            "message-meta";
-
-        meta.innerHTML =
-            `<strong>${
-                message.role === "user"
-                    ? "You"
-                    : "Wor3do"
-            }</strong><span>${
-                message.role === "user"
-                    ? "You"
-                    : "AI"
-            }</span>`;
-
-        const bubble =
-            document.createElement("div");
-
-        bubble.className =
-            "message-bubble";
-
-        bubble.textContent =
-            message.content || "";
-
-        if (message.image) {
-            const image =
-                document.createElement("img");
-
-            image.className =
-                "message-image";
-
-            image.src =
-                message.image;
-
-            image.alt =
-                "Uploaded image";
-
-            image.loading =
-                "lazy";
-
-            bubble.appendChild(image);
-        }
-
-        content.appendChild(meta);
-        content.appendChild(bubble);
-
-        if (
-            message.role ===
-            "assistant"
-        ) {
-            const actions =
-                document.createElement("div");
-
-            actions.className =
-                "message-actions";
-
-            const copyButton =
-                document.createElement("button");
-
-            copyButton.type =
-                "button";
-
-            copyButton.textContent =
-                "Copy";
-
-            copyButton.addEventListener(
-                "click",
-                async () => {
-                    const copied =
-                        await copyText(
-                            message.content || ""
-                        );
-
-                    copyButton.textContent =
-                        copied
-                            ? "Copied"
-                            : "Copy failed";
-
-                    setTimeout(() => {
-                        copyButton.textContent =
-                            "Copy";
-                    }, 1400);
-                }
-            );
-
-            actions.appendChild(
-                copyButton
-            );
-
-            content.appendChild(
-                actions
-            );
-        }
-
-        wrapper.appendChild(avatar);
-        wrapper.appendChild(content);
-
-        chatBox.appendChild(wrapper);
+        box.appendChild(
+            createMessageElement(
+                message
+            )
+        );
     });
 
-    requestAnimationFrame(() => {
-        window.scrollTo({
-            top:
-                document.documentElement
-                    .scrollHeight,
-            behavior: "smooth"
-        });
-    });
+    scrollChatToBottom();
 }
 
-function addTypingIndicator() {
-    removeTypingIndicator();
-
-    const chatBox =
-        document.getElementById("chatBox");
-
+function createMessageElement(message) {
     const wrapper =
-        document.createElement("article");
-
-    wrapper.id =
-        "typingIndicator";
+        document.createElement(
+            "article"
+        );
 
     wrapper.className =
-        "message ai-message";
+        `message ${message.role}`;
 
-    wrapper.innerHTML = `
-        <div class="message-avatar">
-            W
-        </div>
+    const avatar =
+        document.createElement("div");
 
-        <div class="message-content">
-            <div class="message-meta">
-                <strong>Wor3do</strong>
-                <span>AI</span>
-            </div>
+    avatar.className =
+        "message-avatar";
 
-            <div class="message-bubble typing-bubble">
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
-        </div>
-    `;
+    avatar.textContent =
+        message.role === "user"
+            ? getInitials(
+                  profile.name
+              ) || "U"
+            : "W";
 
-    chatBox.appendChild(wrapper);
+    const content =
+        document.createElement("div");
 
+    content.className =
+        "message-content";
+
+    const meta =
+        document.createElement(
+            "div"
+        );
+
+    meta.className =
+        "message-meta";
+
+    meta.innerHTML =
+        `<strong>${
+            message.role === "user"
+                ? "You"
+                : "Wor3do"
+        }</strong>`;
+
+    const bubble =
+        document.createElement(
+            "div"
+        );
+
+    bubble.className =
+        "message-bubble";
+
+    if (message.image) {
+        const image =
+            document.createElement(
+                "img"
+            );
+
+        image.className =
+            "message-image";
+
+        image.src =
+            message.image;
+
+        image.alt =
+            "Attached image";
+
+        image.loading =
+            "lazy";
+
+        bubble.appendChild(
+            image
+        );
+    }
+
+    const text =
+        document.createElement(
+            "div"
+        );
+
+    text.textContent =
+        message.content || "";
+
+    bubble.appendChild(
+        text
+    );
+
+    content.appendChild(
+        meta
+    );
+
+    content.appendChild(
+        bubble
+    );
+
+    if (
+        message.role ===
+        "assistant"
+    ) {
+        const actions =
+            document.createElement(
+                "div"
+            );
+
+        actions.className =
+            "message-actions";
+
+        const copy =
+            document.createElement(
+                "button"
+            );
+
+        copy.type = "button";
+        copy.textContent = "Copy";
+
+        copy.addEventListener(
+            "click",
+            async () => {
+                const success =
+                    await copyText(
+                        message.content ||
+                            ""
+                    );
+
+                copy.textContent =
+                    success
+                        ? "Copied"
+                        : "Failed";
+
+                setTimeout(() => {
+                    copy.textContent =
+                        "Copy";
+                }, 1200);
+            }
+        );
+
+        actions.appendChild(
+            copy
+        );
+
+        content.appendChild(
+            actions
+        );
+    }
+
+    wrapper.appendChild(
+        avatar
+    );
+
+    wrapper.appendChild(
+        content
+    );
+
+    return wrapper;
+}
+
+function addLoadingMessage() {
+    const box =
+        $("#chatBox");
+
+    if (!box) {
+        return "";
+    }
+
+    const id =
+        `loading-${Date.now()}`;
+
+    const wrapper =
+        document.createElement(
+            "article"
+        );
+
+    wrapper.className =
+        "message assistant";
+
+    wrapper.id =
+        id;
+
+    const avatar =
+        document.createElement(
+            "div"
+        );
+
+    avatar.className =
+        "message-avatar";
+
+    avatar.textContent =
+        "W";
+
+    const content =
+        document.createElement(
+            "div"
+        );
+
+    content.className =
+        "message-content";
+
+    const meta =
+        document.createElement(
+            "div"
+        );
+
+    meta.className =
+        "message-meta";
+
+    meta.innerHTML =
+        "<strong>Wor3do</strong>";
+
+    const bubble =
+        document.createElement(
+            "div"
+        );
+
+    bubble.className =
+        "message-bubble typing-bubble";
+
+    bubble.innerHTML =
+        "<span></span><span></span><span></span>";
+
+    content.append(
+        meta,
+        bubble
+    );
+
+    wrapper.append(
+        avatar,
+        content
+    );
+
+    box.appendChild(
+        wrapper
+    );
+
+    scrollChatToBottom();
+
+    return id;
+}
+
+function removeLoadingMessage(id) {
+    if (!id) {
+        return;
+    }
+
+    document
+        .getElementById(id)
+        ?.remove();
+}
+
+function removeAllLoadingMessages() {
+    document
+        .querySelectorAll(
+            '[id^="loading-"]'
+        )
+        .forEach(element =>
+            element.remove()
+        );
+}
+
+function scrollChatToBottom() {
     requestAnimationFrame(() => {
         window.scrollTo({
             top:
@@ -753,10 +841,286 @@ function addTypingIndicator() {
     });
 }
 
-function removeTypingIndicator() {
-    document
-        .getElementById("typingIndicator")
-        ?.remove();
+function resizeInput(event) {
+    const input =
+        event.target;
+
+    input.style.height =
+        "auto";
+
+    input.style.height =
+        `${Math.min(
+            Math.max(
+                input.scrollHeight,
+                44
+            ),
+            160
+        )}px`;
+}
+
+async function handleImageUpload(event) {
+    const file =
+        event.target.files?.[0];
+
+    event.target.value = "";
+
+    if (!file) {
+        return;
+    }
+
+    try {
+        selectedImage =
+            await prepareImage(file);
+
+        renderImagePreview();
+
+        showToast(
+            "Image attached."
+        );
+    } catch (error) {
+        selectedImage =
+            null;
+
+        renderImagePreview();
+
+        showToast(
+            error.message ||
+                "Could not attach image."
+        );
+    }
+}
+
+async function prepareImage(file) {
+    const allowedTypes = [
+        "image/png",
+        "image/jpeg",
+        "image/webp",
+        "image/gif"
+    ];
+
+    if (
+        !allowedTypes.includes(
+            file.type
+        )
+    ) {
+        throw new Error(
+            "Please use PNG, JPEG, WEBP, or GIF."
+        );
+    }
+
+    if (
+        file.size >
+        10 * 1024 * 1024
+    ) {
+        throw new Error(
+            "The image must be smaller than 10 MB."
+        );
+    }
+
+    return resizeImage(
+        file,
+        1280
+    );
+}
+
+function resizeImage(
+    file,
+    maxDimension
+) {
+    return new Promise(
+        (resolve, reject) => {
+            const reader =
+                new FileReader();
+
+            reader.onerror =
+                () =>
+                    reject(
+                        new Error(
+                            "Could not read image."
+                        )
+                    );
+
+            reader.onload = () => {
+                const image =
+                    new Image();
+
+                image.onerror =
+                    () =>
+                        reject(
+                            new Error(
+                                "Could not process image."
+                            )
+                        );
+
+                image.onload =
+                    () => {
+                        const scale =
+                            Math.min(
+                                1,
+                                maxDimension /
+                                    Math.max(
+                                        image.width,
+                                        image.height
+                                    )
+                            );
+
+                        const canvas =
+                            document.createElement(
+                                "canvas"
+                            );
+
+                        canvas.width =
+                            Math.max(
+                                1,
+                                Math.round(
+                                    image.width *
+                                        scale
+                                )
+                            );
+
+                        canvas.height =
+                            Math.max(
+                                1,
+                                Math.round(
+                                    image.height *
+                                        scale
+                                )
+                            );
+
+                        const context =
+                            canvas.getContext(
+                                "2d"
+                            );
+
+                        if (!context) {
+                            reject(
+                                new Error(
+                                    "Image processing is unavailable."
+                                )
+                            );
+
+                            return;
+                        }
+
+                        context.drawImage(
+                            image,
+                            0,
+                            0,
+                            canvas.width,
+                            canvas.height
+                        );
+
+                        resolve(
+                            canvas.toDataURL(
+                                "image/jpeg",
+                                0.85
+                            )
+                        );
+                    };
+
+                image.src =
+                    reader.result;
+            };
+
+            reader.readAsDataURL(
+                file
+            );
+        }
+    );
+}
+
+function renderImagePreview() {
+    const container =
+        $("#imagePreview");
+
+    if (!container) {
+        return;
+    }
+
+    container.innerHTML = "";
+
+    if (!selectedImage) {
+        return;
+    }
+
+    const wrapper =
+        document.createElement(
+            "div"
+        );
+
+    wrapper.className =
+        "image-preview-item";
+
+    const image =
+        document.createElement(
+            "img"
+        );
+
+    image.src =
+        selectedImage;
+
+    image.alt =
+        "Selected image";
+
+    const label =
+        document.createElement(
+            "span"
+        );
+
+    label.textContent =
+        "Image attached";
+
+    const remove =
+        document.createElement(
+            "button"
+        );
+
+    remove.type = "button";
+
+    remove.className =
+        "image-preview-remove";
+
+    remove.textContent =
+        "×";
+
+    remove.setAttribute(
+        "aria-label",
+        "Remove attached image"
+    );
+
+    remove.addEventListener(
+        "click",
+        clearSelectedImage
+    );
+
+    wrapper.append(
+        image,
+        label,
+        remove
+    );
+
+    container.appendChild(
+        wrapper
+    );
+}
+
+function clearSelectedImage() {
+    selectedImage =
+        null;
+
+    renderImagePreview();
+}
+
+function clearComposer() {
+    const input =
+        $("#userInput");
+
+    if (input) {
+        input.value = "";
+        input.style.height = "44px";
+    }
+
+    clearSelectedImage();
 }
 
 function newChat() {
@@ -771,10 +1135,12 @@ function newChat() {
 
     conversation = [];
 
-    clearComposer();
-    persistConversation();
+    saveConversation();
 
-    showPage("chat");
+    clearComposer();
+
+    switchPage("chat");
+
     renderConversation();
 
     showToast(
@@ -782,375 +1148,69 @@ function newChat() {
     );
 }
 
-function handleImageSelection(event) {
-    const file =
-        event.target.files?.[0];
-
-    if (!file) {
-        return;
-    }
-
-    const validTypes = [
-        "image/png",
-        "image/jpeg",
-        "image/webp",
-        "image/gif"
-    ];
-
-    if (!validTypes.includes(file.type)) {
-        showToast(
-            "Please choose a PNG, JPEG, WEBP, or GIF image."
-        );
-
-        event.target.value = "";
-
-        return;
-    }
-
-    if (
-        file.size >
-        10 * 1024 * 1024
-    ) {
-        showToast(
-            "Images must be 10 MB or smaller."
-        );
-
-        event.target.value = "";
-
-        return;
-    }
-
-    selectedImage = file;
-
-    renderImagePreview(file);
-}
-
-function renderImagePreview(file) {
-    const container =
-        document.getElementById(
-            "imagePreviewContainer"
-        );
-
-    const url =
-        URL.createObjectURL(file);
-
-    container.innerHTML = `
-        <div class="image-chip">
-            <img
-                src="${url}"
-                alt="Selected image preview"
-            >
-
-            <div>
-                <strong>
-                    ${escapeHTML(file.name)}
-                </strong>
-
-                <small>
-                    ${formatBytes(file.size)}
-                </small>
-            </div>
-
-            <button
-                type="button"
-                id="removeImageButton"
-                aria-label="Remove image"
-            >
-                ×
-            </button>
-        </div>
-    `;
-
-    document
-        .getElementById("removeImageButton")
-        .addEventListener(
-            "click",
-            clearSelectedImage
-        );
-}
-
-function clearSelectedImage() {
-    selectedImage = null;
-
-    document.getElementById(
-        "imageInput"
-    ).value = "";
-
-    document.getElementById(
-        "imagePreviewContainer"
-    ).innerHTML = "";
-}
-
-function clearComposer() {
-    const input =
-        document.getElementById(
-            "userInput"
-        );
-
-    input.value = "";
-
-    input.style.height =
-        "48px";
-
-    clearSelectedImage();
-}
-
-function resizeTextarea(input) {
-    input.style.height =
-        "auto";
-
-    input.style.height =
-        `${Math.min(
-            Math.max(
-                input.scrollHeight,
-                48
-            ),
-            180
-        )}px`;
-}
-
-function setComposerLoading(loading) {
-    const button =
-        document.getElementById(
-            "sendButton"
-        );
-
-    const input =
-        document.getElementById(
-            "userInput"
-        );
-
-    const attach =
-        document.getElementById(
-            "attachButton"
-        );
-
-    button.disabled =
-        loading;
-
-    attach.disabled =
-        loading;
-
-    button.classList.toggle(
-        "loading",
-        loading
-    );
-
-    input.disabled =
-        loading;
-}
-
-async function prepareImage(file) {
-    const dataUrl =
-        await fileToDataURL(file);
-
-    if (
-        !dataUrl.startsWith(
-            "data:image/"
-        )
-    ) {
-        throw new Error(
-            "Invalid image data."
-        );
-    }
-
-    try {
-        const image =
-            await loadImage(dataUrl);
-
-        const maxDimension =
-            1280;
-
-        const scale =
-            Math.min(
-                1,
-                maxDimension /
-                    Math.max(
-                        image.width,
-                        image.height
-                    )
-            );
-
-        const canvas =
-            document.createElement(
-                "canvas"
-            );
-
-        canvas.width =
-            Math.max(
-                1,
-                Math.round(
-                    image.width *
-                        scale
-                )
-            );
-
-        canvas.height =
-            Math.max(
-                1,
-                Math.round(
-                    image.height *
-                        scale
-                )
-            );
-
-        const context =
-            canvas.getContext(
-                "2d",
-                {
-                    alpha: false
-                }
-            );
-
-        context.drawImage(
-            image,
-            0,
-            0,
-            canvas.width,
-            canvas.height
-        );
-
-        return canvas.toDataURL(
-            "image/jpeg",
-            0.82
-        );
-    } catch {
-        return dataUrl;
-    }
-}
-
-function loadImage(dataUrl) {
-    return new Promise(
-        (resolve, reject) => {
-            const image =
-                new Image();
-
-            image.onload = () =>
-                resolve(image);
-
-            image.onerror = () =>
-                reject(
-                    new Error(
-                        "Image could not be loaded."
-                    )
-                );
-
-            image.src =
-                dataUrl;
-        }
-    );
-}
-
 function loadState() {
-    settings = {
-        ...DEFAULT_SETTINGS,
-        ...readStorage(
-            STORAGE_KEYS.settings,
-            {}
-        )
-    };
+    conversation =
+        readStorage(
+            STORAGE.conversation,
+            []
+        );
+
+    courses =
+        readStorage(
+            STORAGE.courses,
+            []
+        );
+
+    posts =
+        readStorage(
+            STORAGE.posts,
+            null
+        );
 
     profile = {
         ...DEFAULT_PROFILE,
         ...readStorage(
-            STORAGE_KEYS.profile,
+            STORAGE.profile,
             {}
         )
     };
 
-    const savedConversation =
-        readStorage(
-            STORAGE_KEYS.conversation,
-            []
-        );
-
-    const savedCourses =
-        readStorage(
-            STORAGE_KEYS.courses,
-            []
-        );
-
-    const savedPosts =
-        readStorage(
-            STORAGE_KEYS.posts,
-            []
-        );
-
-    conversation =
-        Array.isArray(
-            savedConversation
-        ) && settings.saveChat
-            ? savedConversation
-            : [];
-
-    courses =
-        Array.isArray(
-            savedCourses
+    settings = {
+        ...DEFAULT_SETTINGS,
+        ...readStorage(
+            STORAGE.settings,
+            {}
         )
-            ? savedCourses
-            : [];
+    };
 
-    posts =
-        Array.isArray(
-            savedPosts
-        ) && savedPosts.length
-            ? savedPosts
-            : clonePosts();
-
-    normalizeConversation();
-    normalizeCourses();
-    savePosts();
-}
-
-function normalizeConversation() {
-    conversation =
-        conversation
-            .filter(
-                item =>
-                    item &&
-                    (
-                        item.role ===
-                            "user" ||
-                        item.role ===
-                            "assistant"
-                    )
-            )
-            .map(item => ({
-                role:
-                    item.role,
-
-                content:
-                    String(
-                        item.content ||
-                        ""
-                    ),
-
-                ...(item.image
-                    ? {
-                          image:
-                              String(
-                                  item.image
-                              )
-                      }
-                    : {})
-            }))
-            .slice(-80);
-}
-
-function normalizeCourses() {
-    courses =
-        courses.filter(
-            course =>
-                course &&
-                course.id &&
-                course.content
+    interests =
+        readStorage(
+            STORAGE.interests,
+            ""
         );
+
+    if (!Array.isArray(conversation)) {
+        conversation = [];
+    }
+
+    if (!Array.isArray(courses)) {
+        courses = [];
+    }
+
+    if (
+        !Array.isArray(posts)
+    ) {
+        posts =
+            cloneDefaultPosts();
+
+        savePosts();
+    }
 }
 
-function persistConversation() {
+function saveConversation() {
     if (!settings.saveChat) {
         localStorage.removeItem(
-            STORAGE_KEYS.conversation
+            STORAGE.conversation
         );
 
         return;
@@ -1158,24 +1218,25 @@ function persistConversation() {
 
     try {
         localStorage.setItem(
-            STORAGE_KEYS.conversation,
+            STORAGE.conversation,
             JSON.stringify(
-                conversation.slice(-80)
+                conversation.slice(-60)
             )
         );
     } catch {
-        const textOnly =
-            conversation.map(
-                ({ role, content }) => ({
-                    role,
-                    content
-                })
-            );
-
         try {
             localStorage.setItem(
-                STORAGE_KEYS.conversation,
-                JSON.stringify(textOnly)
+                STORAGE.conversation,
+                JSON.stringify(
+                    conversation.map(
+                        message => ({
+                            role:
+                                message.role,
+                            content:
+                                message.content
+                        })
+                    )
+                )
             );
         } catch {}
     }
@@ -1184,315 +1245,772 @@ function persistConversation() {
 function saveCourses() {
     if (!settings.saveCourses) {
         localStorage.removeItem(
-            STORAGE_KEYS.courses
+            STORAGE.courses
         );
 
         return;
     }
 
-    try {
-        localStorage.setItem(
-            STORAGE_KEYS.courses,
-            JSON.stringify(courses)
-        );
-    } catch {}
+    writeStorage(
+        STORAGE.courses,
+        courses
+    );
 }
 
 function savePosts() {
-    try {
-        localStorage.setItem(
-            STORAGE_KEYS.posts,
-            JSON.stringify(posts)
-        );
-    } catch {}
+    writeStorage(
+        STORAGE.posts,
+        posts
+    );
+}
+
+function saveProfile() {
+    writeStorage(
+        STORAGE.profile,
+        profile
+    );
 }
 
 function saveSettings() {
-    try {
-        localStorage.setItem(
-            STORAGE_KEYS.settings,
-            JSON.stringify(settings)
-        );
-    } catch {}
+    writeStorage(
+        STORAGE.settings,
+        settings
+    );
 }
 
-function saveProfileState() {
-    try {
-        localStorage.setItem(
-            STORAGE_KEYS.profile,
-            JSON.stringify(profile)
-        );
-    } catch {}
-}
+function bindExplore() {
+    $("#exploreRefresh")?.addEventListener(
+        "click",
+        () => {
+            renderExplore(true);
+            showToast("Feed refreshed.");
+        }
+    );
 
-function readStorage(
-    key,
-    fallback
-) {
-    try {
-        const value =
-            localStorage.getItem(key);
+    $("#exploreCustomizeButton")?.addEventListener(
+        "click",
+        () => {
+            const input =
+                $("#exploreInterestsInput");
 
-        return value
-            ? JSON.parse(value)
-            : fallback;
-    } catch {
-        return fallback;
-    }
-}
+            if (input) {
+                input.value =
+                    interests;
+            }
 
-function trimConversation() {
-    if (
-        conversation.length >
-        80
-    ) {
-        conversation =
-            conversation.slice(-80);
-    }
-}
+            openModal(
+                "exploreCustomizeModal"
+            );
+        }
+    );
 
-function renderCourses() {
-    const list =
-        document.getElementById(
-            "coursesList"
-        );
+    $("#exploreCustomizeForm")?.addEventListener(
+        "submit",
+        event => {
+            event.preventDefault();
 
-    const count =
-        courses.length;
+            interests =
+                $("#exploreInterestsInput")
+                    ?.value.trim() ||
+                "";
 
-    document.getElementById(
-        "courseCountLabel"
-    ).textContent =
-        `${count} ${
-            count === 1
-                ? "course"
-                : "courses"
-        }`;
-
-    if (!count) {
-        list.innerHTML = `
-            <div class="empty-state">
-                <div class="empty-icon">
-                    ▣
-                </div>
-
-                <h2>
-                    Your courses
-                </h2>
-
-                <p>
-                    Courses you create will
-                    appear here. Start with a
-                    topic and let AI build
-                    the structure.
-                </p>
-
-                <button
-                    class="secondary-button"
-                    id="emptyCreateCourseButton"
-                    type="button"
-                >
-                    Create your first course
-                </button>
-            </div>
-        `;
-
-        document
-            .getElementById(
-                "emptyCreateCourseButton"
-            )
-            .addEventListener(
-                "click",
-                openCourseCreator
+            writeStorage(
+                STORAGE.interests,
+                interests
             );
 
+            closeModal(
+                "exploreCustomizeModal"
+            );
+
+            renderExplore();
+
+            showToast(
+                "Feed preferences saved."
+            );
+        }
+    );
+
+    $$(".explore-tab").forEach(
+        button => {
+            button.addEventListener(
+                "click",
+                () => {
+                    currentCategory =
+                        button.dataset.category;
+
+                    $$(".explore-tab")
+                        .forEach(
+                            tab => {
+                                const active =
+                                    tab ===
+                                    button;
+
+                                tab.classList.toggle(
+                                    "active",
+                                    active
+                                );
+                            }
+                        );
+
+                    renderExplore();
+                }
+            );
+        }
+    );
+
+    $("#createPostButton")?.addEventListener(
+        "click",
+        () =>
+            openModal(
+                "createPostModal"
+            )
+    );
+}
+
+function renderExplore(
+    shuffle = false
+) {
+    const feed =
+        $("#reelsFeed");
+
+    const empty =
+        $("#exploreEmpty");
+
+    if (!feed) {
         return;
     }
 
-    list.innerHTML = "";
+    let reels = [
+        ...REELS
+    ];
 
-    courses.forEach(course => {
-        const card =
-            document.createElement(
-                "article"
+    if (
+        currentCategory !==
+        "for-you"
+    ) {
+        reels =
+            reels.filter(
+                reel =>
+                    reel.category ===
+                    currentCategory
             );
+    }
 
-        card.className =
-            "course-card";
+    if (
+        currentCategory ===
+            "for-you" &&
+        interests
+    ) {
+        const words =
+            interests
+                .toLowerCase()
+                .split(
+                    /[,\s]+/
+                )
+                .filter(Boolean);
 
-        const title =
-            document.createElement(
-                "h3"
-            );
-
-        title.textContent =
-            course.title ||
-            course.topic ||
-            "Untitled course";
-
-        const meta =
-            document.createElement(
-                "div"
-            );
-
-        meta.className =
-            "course-meta";
-
-        meta.textContent =
-            `${
-                course.level ||
-                "Beginner"
-            } · ${formatDate(
-                course.createdAt
-            )}`;
-
-        const description =
-            document.createElement(
-                "p"
-            );
-
-        description.textContent =
-            trimText(
-                course.content,
-                190
-            );
-
-        const footer =
-            document.createElement(
-                "div"
-            );
-
-        footer.className =
-            "course-footer";
-
-        const openButton =
-            document.createElement(
-                "button"
-            );
-
-        openButton.className =
-            "secondary-button small";
-
-        openButton.type =
-            "button";
-
-        openButton.textContent =
-            "Open course";
-
-        openButton.addEventListener(
-            "click",
-            () =>
-                openCourseModal(
-                    course
+        reels.sort(
+            (a, b) =>
+                scoreReel(
+                    b,
+                    words
+                ) -
+                scoreReel(
+                    a,
+                    words
                 )
         );
+    }
 
-        const deleteButton =
-            document.createElement(
-                "button"
-            );
-
-        deleteButton.className =
-            "text-button danger-text";
-
-        deleteButton.type =
-            "button";
-
-        deleteButton.textContent =
-            "Delete";
-
-        deleteButton.addEventListener(
-            "click",
+    if (shuffle) {
+        reels.sort(
             () =>
-                deleteCourse(
-                    course.id
+                Math.random() -
+                0.5
+        );
+    }
+
+    feed.innerHTML = "";
+
+    reels.forEach(
+        reel =>
+            feed.appendChild(
+                createReelElement(
+                    reel
                 )
-        );
+            )
+    );
 
-        footer.append(
-            openButton,
-            deleteButton
-        );
+    if (empty) {
+        empty.hidden =
+            reels.length > 0;
+    }
 
-        card.append(
-            title,
-            meta,
-            description,
-            footer
-        );
-
-        list.appendChild(card);
-    });
+    renderPosts();
+    updateInterestText();
 }
 
-function openCourseCreator() {
-    showPage("courses");
+function scoreReel(
+    reel,
+    words
+) {
+    const text = [
+        reel.title,
+        reel.description,
+        reel.creator,
+        reel.tag,
+        reel.category
+    ]
+        .join(" ")
+        .toLowerCase();
 
-    const creator =
-        document.getElementById(
-            "courseCreator"
+    return words.reduce(
+        (score, word) =>
+            score +
+            (text.includes(
+                word
+            )
+                ? 1
+                : 0),
+        0
+    );
+}
+
+function createReelElement(
+    reel
+) {
+    const article =
+        document.createElement(
+            "article"
         );
 
-    creator.classList.add(
-        "open"
+    article.className =
+        "reel-card";
+
+    const media =
+        document.createElement(
+            "div"
+        );
+
+    media.className =
+        `reel-media reel-placeholder-${escapeClass(
+            reel.style
+        )}`;
+
+    const mediaContent =
+        document.createElement(
+            "div"
+        );
+
+    mediaContent.className =
+        "reel-placeholder-content";
+
+    mediaContent.innerHTML =
+        `<span class="reel-ai-badge">AI PICK</span>`;
+
+    const title =
+        document.createElement(
+            "h2"
+        );
+
+    title.textContent =
+        reel.title;
+
+    const subtitle =
+        document.createElement(
+            "p"
+        );
+
+    subtitle.textContent =
+        interests
+            ? "Personalized for your interests"
+            : "Selected for your interests";
+
+    mediaContent.append(
+        title,
+        subtitle
     );
 
-    creator.setAttribute(
-        "aria-hidden",
-        "false"
+    media.appendChild(
+        mediaContent
     );
 
-    document
-        .getElementById(
-            "courseTopic"
+    const info =
+        document.createElement(
+            "div"
+        );
+
+    info.className =
+        "reel-info";
+
+    const creator =
+        document.createElement(
+            "div"
+        );
+
+    creator.className =
+        "reel-creator";
+
+    const avatar =
+        document.createElement(
+            "div"
+        );
+
+    avatar.className =
+        "reel-avatar";
+
+    avatar.textContent =
+        reel.creatorInitial;
+
+    const creatorText =
+        document.createElement(
+            "div"
+        );
+
+    const creatorName =
+        document.createElement(
+            "strong"
+        );
+
+    creatorName.textContent =
+        reel.creator;
+
+    const creatorTag =
+        document.createElement(
+            "span"
+        );
+
+    creatorTag.textContent =
+        reel.tag;
+
+    creatorText.append(
+        creatorName,
+        creatorTag
+    );
+
+    creator.append(
+        avatar,
+        creatorText
+    );
+
+    const description =
+        document.createElement(
+            "p"
+        );
+
+    description.className =
+        "reel-description";
+
+    description.textContent =
+        reel.description;
+
+    const actions =
+        document.createElement(
+            "div"
+        );
+
+    actions.className =
+        "reel-actions";
+
+    const like =
+        createActionButton(
+            "♡",
+            "Like"
+        );
+
+    const comment =
+        createActionButton(
+            "◌",
+            "Comment"
+        );
+
+    const share =
+        createActionButton(
+            "↗",
+            "Share"
+        );
+
+    const save =
+        createActionButton(
+            "⌑",
+            ""
+        );
+
+    save.classList.add(
+        "reel-save"
+    );
+
+    like.addEventListener(
+        "click",
+        () => {
+            like.classList.toggle(
+                "active"
+            );
+
+            like.firstChild.textContent =
+                like.classList.contains(
+                    "active"
+                )
+                    ? "♥ "
+                    : "♡ ";
+        }
+    );
+
+    comment.addEventListener(
+        "click",
+        () => {
+            showToast(
+                "Comments are coming soon."
+            );
+        }
+    );
+
+    share.addEventListener(
+        "click",
+        async () => {
+            const text =
+                `${reel.title} — ${reel.description}`;
+
+            const shared =
+                await shareText(
+                    text
+                );
+
+            showToast(
+                shared
+                    ? "Reel shared."
+                    : "Could not share."
+            );
+        }
+    );
+
+    save.addEventListener(
+        "click",
+        () => {
+            save.classList.toggle(
+                "active"
+            );
+
+            save.firstChild.textContent =
+                save.classList.contains(
+                    "active"
+                )
+                    ? "▣ "
+                    : "⌑ ";
+        }
+    );
+
+    actions.append(
+        like,
+        comment,
+        share,
+        save
+    );
+
+    info.append(
+        creator,
+        description,
+        actions
+    );
+
+    article.append(
+        media,
+        info
+    );
+
+    return article;
+}
+
+function createActionButton(
+    icon,
+    label
+) {
+    const button =
+        document.createElement(
+            "button"
+        );
+
+    button.type = "button";
+
+    button.appendChild(
+        document.createTextNode(
+            `${icon} `
         )
-        .focus();
-}
-
-function closeCourseCreator() {
-    const creator =
-        document.getElementById(
-            "courseCreator"
-        );
-
-    creator.classList.remove(
-        "open"
     );
 
-    creator.setAttribute(
-        "aria-hidden",
-        "true"
+    if (label) {
+        const span =
+            document.createElement(
+                "span"
+            );
+
+        span.textContent =
+            label;
+
+        button.appendChild(
+            span
+        );
+    }
+
+    return button;
+}
+
+function renderPosts() {
+    const grid =
+        $("#postGrid");
+
+    if (!grid) {
+        return;
+    }
+
+    grid.innerHTML = "";
+
+    if (!posts.length) {
+        grid.hidden = true;
+        return;
+    }
+
+    const filtered =
+        currentCategory ===
+        "for-you"
+            ? posts
+            : posts.filter(
+                  post =>
+                      post.category ===
+                          currentCategory ||
+                      currentCategory ===
+                          "learning"
+                          ? post.category ===
+                            "learning"
+                          : currentCategory ===
+                                "for-you"
+                              ? true
+                              : false
+              );
+
+    if (!filtered.length) {
+        grid.hidden = true;
+        return;
+    }
+
+    filtered.forEach(
+        post =>
+            grid.appendChild(
+                createPostCard(post)
+            )
+    );
+
+    grid.hidden = false;
+}
+
+function createPostCard(post) {
+    const article =
+        document.createElement(
+            "article"
+        );
+
+    article.className =
+        "post-card";
+
+    const header =
+        document.createElement(
+            "div"
+        );
+
+    header.className =
+        "post-card-header";
+
+    const avatar =
+        document.createElement(
+            "div"
+        );
+
+    avatar.className =
+        "post-card-avatar";
+
+    avatar.textContent =
+        post.avatar;
+
+    const user =
+        document.createElement(
+            "div"
+        );
+
+    user.className =
+        "post-card-user";
+
+    const name =
+        document.createElement(
+            "strong"
+        );
+
+    name.textContent =
+        post.name;
+
+    const time =
+        document.createElement(
+            "span"
+        );
+
+    time.textContent =
+        post.time;
+
+    user.append(
+        name,
+        time
+    );
+
+    header.append(
+        avatar,
+        user
+    );
+
+    const title =
+        document.createElement(
+            "h3"
+        );
+
+    title.textContent =
+        post.title ||
+        "Community post";
+
+    const body =
+        document.createElement(
+            "p"
+        );
+
+    body.textContent =
+        post.text;
+
+    const footer =
+        document.createElement(
+            "div"
+        );
+
+    footer.className =
+        "post-card-footer";
+
+    const like =
+        document.createElement(
+            "button"
+        );
+
+    like.type = "button";
+
+    like.textContent =
+        `♡ ${post.likes || 0}`;
+
+    like.addEventListener(
+        "click",
+        () => {
+            post.likes =
+                Number(
+                    post.likes || 0
+                ) + 1;
+
+            savePosts();
+
+            like.textContent =
+                `♥ ${post.likes}`;
+        }
+    );
+
+    const share =
+        document.createElement(
+            "button"
+        );
+
+    share.type = "button";
+    share.textContent =
+        "↗ Share";
+
+    share.addEventListener(
+        "click",
+        async () => {
+            await shareText(
+                `${post.title || "Wor3do post"} — ${post.text}`
+            );
+
+            showToast(
+                "Post copied."
+            );
+        }
+    );
+
+    footer.append(
+        like,
+        share
+    );
+
+    article.append(
+        header,
+        title,
+        body,
+        footer
+    );
+
+    return article;
+}
+
+function updateInterestText() {
+    const text =
+        $("#exploreInterestText");
+
+    if (!text) {
+        return;
+    }
+
+    text.textContent =
+        interests
+            ? `Personalized around: ${interests}`
+            : "Wor3do learns what interests you and personalizes your feed.";
+}
+
+function bindCourses() {
+    $("#createCourseButton")?.addEventListener(
+        "click",
+        createCourse
+    );
+
+    $("#courseTopic")?.addEventListener(
+        "keydown",
+        event => {
+            if (
+                event.key ===
+                    "Enter" &&
+                (
+                    event.ctrlKey ||
+                    event.metaKey
+                )
+            ) {
+                event.preventDefault();
+                createCourse();
+            }
+        }
     );
 }
 
 async function createCourse() {
     const topicInput =
-        document.getElementById(
-            "courseTopic"
-        );
-
-    const levelInput =
-        document.getElementById(
-            "courseLevel"
-        );
+        $("#courseTopic");
 
     const button =
-        document.getElementById(
-            "createCourseButton"
-        );
-
-    const topic =
-        topicInput.value.trim();
+        $("#createCourseButton");
 
     const level =
-        levelInput.value;
+        $("#courseLevel")?.value ||
+        "beginner";
+
+    const topic =
+        topicInput?.value.trim();
 
     if (!topic) {
         showToast(
-            "Tell me what you want to learn first."
+            "Enter a course topic first."
         );
 
-        topicInput.focus();
+        topicInput?.focus();
 
         return;
     }
@@ -1501,11 +2019,11 @@ async function createCourse() {
         true;
 
     button.textContent =
-        "Creating…";
+        "Creating...";
 
     try {
         const prompt =
-            `Create a complete ${level} course about "${topic}". Give the course a clear title and create 8 to 12 lessons. For every lesson, include a short description and the main topics to learn. Include a practical final project or assessment at the end.`;
+            `Create a complete structured ${level} course about "${topic}". Provide a clear course title, a short introduction, learning objectives, 8 to 10 lessons, a useful description for every lesson, key concepts to study, and a final practical project or assessment. Keep the course organized and useful.`;
 
         const response =
             await fetchWithTimeout(
@@ -1520,6 +2038,14 @@ async function createCourse() {
                     },
                     body:
                         JSON.stringify({
+                            messages: [
+                                {
+                                    role:
+                                        "user",
+                                    content:
+                                        prompt
+                                }
+                            ],
                             message:
                                 prompt
                         })
@@ -1540,34 +2066,37 @@ async function createCourse() {
             );
         }
 
-        const content =
+        const output =
             extractOutput(data);
 
-        if (!content) {
+        if (!output) {
             throw new Error(
-                "The AI returned an empty course."
+                "The AI returned no course."
             );
         }
 
         const course = {
-            id: uid(),
-            topic,
-            level,
+            id:
+                createId(),
             title:
-                extractTitle(
-                    content,
+                extractCourseTitle(
+                    output,
                     topic
                 ),
-            content,
+            topic,
+            level,
+            content:
+                output,
             createdAt:
                 Date.now()
         };
 
-        courses.unshift(course);
+        courses.unshift(
+            course
+        );
 
         saveCourses();
         renderCourses();
-        closeCourseCreator();
 
         topicInput.value = "";
 
@@ -1580,46 +2109,189 @@ async function createCourse() {
         }
     } catch (error) {
         showToast(
-            friendlyError(error)
+            friendlyError(
+                error
+            )
         );
     } finally {
         button.disabled =
             false;
 
         button.textContent =
-            "Create with AI";
+            "Create course";
     }
 }
 
-function extractTitle(
-    content,
-    fallback
-) {
-    const firstLine =
-        String(content)
-            .split("\n")
-            .map(line =>
-                line.trim()
-            )
-            .find(Boolean) ||
-        "";
+function renderCourses() {
+    const list =
+        $("#coursesList");
 
-    const cleaned =
-        firstLine
-            .replace(
-                /^#+\s*/,
-                ""
-            )
-            .replace(
-                /^title\s*:\s*/i,
-                ""
-            )
-            .trim();
+    const count =
+        $("#courseCount");
 
-    return cleaned.length >= 4 &&
-        cleaned.length <= 120
-        ? cleaned
-        : fallback;
+    if (!list) {
+        return;
+    }
+
+    list.innerHTML = "";
+
+    if (count) {
+        count.textContent =
+            String(
+                courses.length
+            );
+    }
+
+    if (!courses.length) {
+        list.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    ▣
+                </div>
+
+                <h3>
+                    No courses yet
+                </h3>
+
+                <p>
+                    Create your first AI-powered course to build your learning library.
+                </p>
+            </div>
+        `;
+
+        return;
+    }
+
+    courses.forEach(
+        course => {
+            const item =
+                document.createElement(
+                    "article"
+                );
+
+            item.className =
+                "course-item";
+
+            const header =
+                document.createElement(
+                    "div"
+                );
+
+            header.className =
+                "course-item-header";
+
+            const title =
+                document.createElement(
+                    "h3"
+                );
+
+            title.textContent =
+                course.title;
+
+            const meta =
+                document.createElement(
+                    "p"
+                );
+
+            meta.textContent =
+                `${capitalize(
+                    course.level
+                )} · ${formatDate(
+                    course.createdAt
+                )}`;
+
+            header.append(
+                title
+            );
+
+            const headerWrap =
+                document.createElement(
+                    "div"
+                );
+
+            headerWrap.append(
+                header
+            );
+
+            const description =
+                document.createElement(
+                    "div"
+                );
+
+            description.className =
+                "course-item-description";
+
+            description.textContent =
+                trimText(
+                    course.content,
+                    180
+                );
+
+            const actions =
+                document.createElement(
+                    "div"
+                );
+
+            actions.className =
+                "course-item-actions";
+
+            const open =
+                document.createElement(
+                    "button"
+                );
+
+            open.type = "button";
+
+            open.textContent =
+                "Open course";
+
+            open.addEventListener(
+                "click",
+                () =>
+                    openCourseModal(
+                        course
+                    )
+            );
+
+            const deleteButton =
+                document.createElement(
+                    "button"
+                );
+
+            deleteButton.type =
+                "button";
+
+            deleteButton.className =
+                "delete-course";
+
+            deleteButton.textContent =
+                "Delete";
+
+            deleteButton.addEventListener(
+                "click",
+                () =>
+                    deleteCourse(
+                        course.id
+                    )
+            );
+
+            actions.append(
+                open,
+                deleteButton
+            );
+
+            item.append(
+                headerWrap,
+                meta,
+                description,
+                actions
+            );
+
+            list.appendChild(
+                item
+            );
+        }
+    );
 }
 
 function deleteCourse(id) {
@@ -1635,7 +2307,7 @@ function deleteCourse(id) {
 
     if (
         !window.confirm(
-            `Delete "${course.title || course.topic}"?`
+            `Delete "${course.title}"?`
         )
     ) {
         return;
@@ -1655,342 +2327,174 @@ function deleteCourse(id) {
     );
 }
 
-function openCourseModal(course) {
-    document.getElementById(
-        "courseModalTitle"
-    ).textContent =
-        course.title ||
-        course.topic;
+function openCourseModal(
+    course
+) {
+    $("#courseModalTitle").textContent =
+        course.title;
 
-    document.getElementById(
-        "courseModalMeta"
-    ).textContent =
-        `${course.level} · Created ${formatDate(
+    $("#courseModalMeta").textContent =
+        `${capitalize(
+            course.level
+        )} · ${formatDate(
             course.createdAt
         )}`;
 
-    document.getElementById(
-        "courseModalContent"
-    ).textContent =
-        course.content ||
-        "No course content available.";
+    $("#courseModalContent").textContent =
+        course.content;
 
     openModal(
         "courseModal"
     );
 }
 
-function renderPosts() {
-    const grid =
-        document.getElementById(
-            "postGrid"
-        );
-
-    const filtered =
-        currentCategory === "all"
-            ? posts
-            : posts.filter(
-                  post =>
-                      post.category ===
-                      currentCategory
-              );
-
-    if (!filtered.length) {
-        grid.innerHTML = `
-            <div class="empty-state compact">
-                <h2>
-                    No posts here yet
-                </h2>
-
-                <p>
-                    Nothing is showing in
-                    this category right now.
-                </p>
-            </div>
-        `;
-
-        return;
-    }
-
-    grid.innerHTML = "";
-
-    filtered.forEach(post => {
-        const card =
-            document.createElement(
-                "article"
-            );
-
-        card.className =
-            "post-card";
-
-        const user =
-            document.createElement(
-                "div"
-            );
-
-        user.className =
-            "post-user";
-
-        const avatar =
-            document.createElement(
-                "div"
-            );
-
-        avatar.className =
-            "post-avatar";
-
-        avatar.textContent =
-            post.avatar ||
-            getInitials(
-                post.name
-            ) ||
-            "U";
-
-        const info =
-            document.createElement(
-                "div"
-            );
-
-        info.innerHTML =
-            `<strong>${escapeHTML(
-                post.name
-            )}</strong><span>${escapeHTML(
-                post.time
-            )}</span>`;
-
-        user.append(
-            avatar,
-            info
-        );
-
-        const title =
-            document.createElement(
-                "h3"
-            );
-
-        title.textContent =
-            post.title;
-
-        const body =
-            document.createElement(
-                "p"
-            );
-
-        body.textContent =
-            post.body;
-
-        const footer =
-            document.createElement(
-                "div"
-            );
-
-        footer.className =
-            "post-footer";
-
-        const likeButton =
-            document.createElement(
-                "button"
-            );
-
-        likeButton.type =
-            "button";
-
-        likeButton.textContent =
-            `♡ ${Number(
-                post.likes || 0
-            )}`;
-
-        likeButton.addEventListener(
-            "click",
-            () =>
-                likePost(
-                    post.id,
-                    likeButton
-                )
-        );
-
-        const commentCount =
-            document.createElement(
-                "span"
-            );
-
-        commentCount.textContent =
-            `💬 ${Number(
-                post.comments || 0
-            )}`;
-
-        const shareButton =
-            document.createElement(
-                "button"
-            );
-
-        shareButton.type =
-            "button";
-
-        shareButton.textContent =
-            "↗ Share";
-
-        shareButton.addEventListener(
-            "click",
-            () =>
-                sharePost(post)
-        );
-
-        footer.append(
-            likeButton,
-            commentCount,
-            shareButton
-        );
-
-        card.append(
-            user,
-            title,
-            body,
-            footer
-        );
-
-        grid.appendChild(card);
-    });
-}
-
-function likePost(
-    id,
-    button
+function extractCourseTitle(
+    content,
+    fallback
 ) {
-    const post =
-        posts.find(
-            item =>
-                item.id === id
-        );
+    const firstLine =
+        String(content)
+            .split("\n")
+            .map(line =>
+                line.trim()
+            )
+            .find(Boolean) ||
+        "";
 
-    if (!post) {
-        return;
-    }
-
-    post.likes =
-        Number(
-            post.likes || 0
-        ) + 1;
-
-    button.textContent =
-        `♥ ${post.likes}`;
-
-    savePosts();
-}
-
-async function sharePost(post) {
-    const text =
-        `${post.title} — ${post.body}`;
-
-    try {
-        if (navigator.share) {
-            await navigator.share({
-                title: post.title,
-                text
-            });
-        } else {
-            await copyText(text);
-
-            showToast(
-                "Post text copied."
-            );
-        }
-    } catch {}
-}
-
-function publishPost() {
-    const title =
-        document.getElementById(
-            "postTitle"
-        ).value.trim();
-
-    const body =
-        document.getElementById(
-            "postBody"
-        ).value.trim();
-
-    const category =
-        document.getElementById(
-            "postCategory"
-        ).value;
-
-    if (!title || !body) {
-        showToast(
-            "Please complete the post before publishing."
-        );
-
-        return;
-    }
-
-    posts.unshift({
-        id: uid(),
-        name:
-            profile.name.trim() ||
-            "You",
-        avatar:
-            getInitials(
-                profile.name
-            ) ||
-            "U",
-        time:
-            "Just now",
-        title,
-        body,
-        category,
-        likes: 0,
-        comments: 0
-    });
-
-    savePosts();
-    renderPosts();
-
-    document
-        .getElementById("postForm")
-        .reset();
-
-    closeModal(
-        "postModal"
-    );
+    const clean =
+        firstLine
+            .replace(
+                /^#+\s*/,
+                ""
+            )
+            .replace(
+                /^title\s*:\s*/i,
+                ""
+            )
+            .trim();
 
     if (
-        settings.communityNotifications
+        clean.length >= 4 &&
+        clean.length <= 120
     ) {
-        showToast(
-            "Post published."
-        );
+        return clean;
     }
+
+    return fallback;
 }
 
-function setSettingsPanel(
-    panel
-) {
-    document
-        .querySelectorAll(
-            "[data-settings-panel]"
-        )
+function bindSettings() {
+    $$(".settings-nav-item")
         .forEach(button => {
+            button.addEventListener(
+                "click",
+                () => {
+                    setSettingsTab(
+                        button.dataset
+                            .settingsTab
+                    );
+                }
+            );
+        });
+
+    $$("[data-setting]")
+        .forEach(button => {
+            button.addEventListener(
+                "click",
+                () => {
+                    toggleSetting(
+                        button.dataset
+                            .setting
+                    );
+                }
+            );
+        });
+
+    $$("[data-theme-choice]")
+        .forEach(button => {
+            button.addEventListener(
+                "click",
+                () => {
+                    settings.theme =
+                        button.dataset
+                            .themeChoice;
+
+                    saveSettings();
+                    applyTheme();
+
+                    showToast(
+                        `${capitalize(
+                            settings.theme
+                        )} theme enabled.`
+                    );
+                }
+            );
+        });
+
+    $("#saveProfileButton")?.addEventListener(
+        "click",
+        saveProfileFromForm
+    );
+
+    $("#clearDataButton")?.addEventListener(
+        "click",
+        clearLocalData
+    );
+}
+
+function setSettingsTab(
+    tab
+) {
+    $$(".settings-nav-item")
+        .forEach(button => {
+            const active =
+                button.dataset
+                    .settingsTab ===
+                tab;
+
             button.classList.toggle(
                 "active",
-                button.dataset.settingsPanel ===
-                    panel
+                active
             );
+
+            if (active) {
+                button.setAttribute(
+                    "aria-current",
+                    "page"
+                );
+            } else {
+                button.removeAttribute(
+                    "aria-current"
+                );
+            }
         });
 
-    document
-        .querySelectorAll(
-            "[data-settings-content]"
-        )
-        .forEach(content => {
-            content.classList.toggle(
+    $$(".settings-section")
+        .forEach(section => {
+            const active =
+                section.dataset
+                    .settingsSection ===
+                tab;
+
+            section.classList.toggle(
                 "active",
-                content.dataset.settingsContent ===
-                    panel
+                active
             );
+
+            section.hidden =
+                !active;
         });
 }
 
-function toggleSetting(key) {
-    if (!(key in settings)) {
+function toggleSetting(
+    key
+) {
+    if (
+        !Object.prototype.hasOwnProperty.call(
+            settings,
+            key
+        )
+    ) {
         return;
     }
 
@@ -2001,12 +2505,11 @@ function toggleSetting(key) {
         key === "saveChat" &&
         !settings.saveChat
     ) {
-        conversation = [];
-
         localStorage.removeItem(
-            STORAGE_KEYS.conversation
+            STORAGE.conversation
         );
 
+        conversation = [];
         renderConversation();
     }
 
@@ -2015,7 +2518,7 @@ function toggleSetting(key) {
         !settings.saveCourses
     ) {
         localStorage.removeItem(
-            STORAGE_KEYS.courses
+            STORAGE.courses
         );
     }
 
@@ -2025,16 +2528,15 @@ function toggleSetting(key) {
 }
 
 function updateSettingsUI() {
-    document
-        .querySelectorAll(
-            "[data-toggle-key]"
-        )
+    $$("[data-setting]")
         .forEach(button => {
             const enabled =
-                !!settings[
-                    button.dataset
-                        .toggleKey
-                ];
+                Boolean(
+                    settings[
+                        button.dataset
+                            .setting
+                    ]
+                );
 
             button.classList.toggle(
                 "active",
@@ -2047,123 +2549,107 @@ function updateSettingsUI() {
             );
         });
 
-    document
-        .querySelectorAll(
-            "[data-theme]"
-        )
+    $$("[data-theme-choice]")
         .forEach(button => {
+            const active =
+                button.dataset
+                    .themeChoice ===
+                settings.theme;
+
             button.classList.toggle(
                 "active",
-                button.dataset.theme ===
-                    settings.theme
+                active
+            );
+
+            button.setAttribute(
+                "aria-pressed",
+                String(active)
             );
         });
 }
 
 function applyTheme() {
     document.documentElement.dataset.theme =
-        settings.theme === "dark"
+        settings.theme ===
+        "dark"
             ? "dark"
             : "light";
 
     updateSettingsUI();
 }
 
-function saveProfile() {
+function saveProfileFromForm() {
     profile = {
         name:
-            document
-                .getElementById(
-                    "displayNameInput"
-                )
-                .value.trim(),
+            $("#displayNameInput")
+                ?.value.trim() ||
+            "Wor3do User",
 
         about:
-            document
-                .getElementById(
-                    "aboutInput"
-                )
-                .value.trim()
+            $("#aboutInput")
+                ?.value.trim() ||
+            ""
     };
 
-    saveProfileState();
-    updateProfileUI();
+    saveProfile();
+    updateProfile();
+
+    renderConversation();
 
     showToast(
-        "Profile changes saved."
+        "Profile saved."
     );
 }
 
-function updateProfileUI() {
+function updateProfile() {
     const name =
-        profile.name.trim() ||
-        "Your profile";
+        profile.name ||
+        "Wor3do User";
 
     const initials =
-        getInitials(
-            profile.name
-        ) || "U";
+        getInitials(name) ||
+        "W";
 
-    const about =
-        profile.about.trim() ||
-        "Add a little information about yourself.";
-
-    document.getElementById(
-        "sidebarAvatar"
-    ).textContent =
+    $("#sidebarAvatar").textContent =
         initials;
 
-    document.getElementById(
-        "settingsAvatar"
-    ).textContent =
+    $("#settingsAvatar").textContent =
         initials;
 
-    document.getElementById(
-        "sidebarProfileName"
-    ).textContent =
+    $("#sidebarProfileName").textContent =
         name;
 
-    document.getElementById(
-        "settingsProfileName"
-    ).textContent =
+    $("#settingsProfileName").textContent =
         name;
 
-    document.getElementById(
-        "settingsProfileAbout"
-    ).textContent =
-        about;
-
-    document.getElementById(
-        "displayNameInput"
-    ).value =
+    $("#displayNameInput").value =
         profile.name;
 
-    document.getElementById(
-        "aboutInput"
-    ).value =
+    $("#aboutInput").value =
         profile.about;
 }
 
 function clearLocalData() {
     if (
         !window.confirm(
-            "Clear local chat history, courses, posts, profile, and settings?"
+            "Clear your local chat history, courses, posts, profile, preferences, and feed interests?"
         )
     ) {
         return;
     }
 
     Object.values(
-        STORAGE_KEYS
-    ).forEach(key => {
+        STORAGE
+    ).forEach(key =>
         localStorage.removeItem(
             key
-        );
-    });
+        )
+    );
 
     conversation = [];
     courses = [];
-    posts = clonePosts();
+    posts =
+        cloneDefaultPosts();
 
     profile = {
         ...DEFAULT_PROFILE
@@ -2173,17 +2659,17 @@ function clearLocalData() {
         ...DEFAULT_SETTINGS
     };
 
-    currentCategory =
-        "all";
+    interests = "";
 
     savePosts();
+    saveProfile();
     saveSettings();
-    saveProfileState();
 
     renderConversation();
     renderCourses();
-    renderPosts();
-    updateProfileUI();
+    renderExplore();
+
+    updateProfile();
     applyTheme();
 
     showToast(
@@ -2191,16 +2677,164 @@ function clearLocalData() {
     );
 }
 
+function bindModals() {
+    $("#createPostForm")
+        ?.addEventListener(
+            "submit",
+            event => {
+                event.preventDefault();
+                publishPost();
+            }
+        );
+
+    $$(".modal-close")
+        .forEach(button => {
+            button.addEventListener(
+                "click",
+                () => {
+                    const modal =
+                        button.closest(
+                            ".modal"
+                        );
+
+                    if (modal) {
+                        closeModal(
+                            modal.id
+                        );
+                    }
+                }
+            );
+        });
+
+    $$("[data-modal-close]")
+        .forEach(button => {
+            button.addEventListener(
+                "click",
+                () => {
+                    closeModal(
+                        button.dataset
+                            .modalClose
+                    );
+                }
+            );
+        });
+
+    $$(".modal-backdrop")
+        .forEach(backdrop => {
+            backdrop.addEventListener(
+                "click",
+                () => {
+                    const modal =
+                        backdrop.closest(
+                            ".modal"
+                        );
+
+                    if (modal) {
+                        closeModal(
+                            modal.id
+                        );
+                    }
+                }
+            );
+        });
+
+    document.addEventListener(
+        "keydown",
+        event => {
+            if (
+                event.key ===
+                "Escape"
+            ) {
+                if (activeModal) {
+                    closeModal(
+                        activeModal
+                    );
+                }
+
+                closeMobileSidebar();
+            }
+        }
+    );
+}
+
+function publishPost() {
+    const text =
+        $("#postText")
+            ?.value.trim();
+
+    if (!text) {
+        showToast(
+            "Write something first."
+        );
+
+        return;
+    }
+
+    const post = {
+        id:
+            createId(),
+        name:
+            profile.name ||
+            "Wor3do User",
+        avatar:
+            getInitials(
+                profile.name
+            ) || "W",
+        time:
+            "Just now",
+        title:
+            "Community post",
+        text,
+        category:
+            "for-you",
+        likes: 0
+    };
+
+    posts.unshift(
+        post
+    );
+
+    savePosts();
+
+    $("#postText").value =
+        "";
+
+    closeModal(
+        "createPostModal"
+    );
+
+    renderPosts();
+
+    if (
+        settings.communityNotifications
+    ) {
+        showToast(
+            "Post published."
+        );
+    }
+}
+
 function openModal(id) {
     const modal =
-        document.getElementById(id);
+        document.getElementById(
+            id
+        );
 
     if (!modal) {
         return;
     }
 
+    if (
+        activeModal &&
+        activeModal !== id
+    ) {
+        closeModal(
+            activeModal
+        );
+    }
+
     modal.classList.add(
-        "visible"
+        "open"
     );
 
     modal.setAttribute(
@@ -2208,49 +2842,131 @@ function openModal(id) {
         "false"
     );
 
-    const firstField =
-        modal.querySelector(
-            "input, textarea, select"
-        );
+    document.body.classList.add(
+        "modal-open"
+    );
+
+    activeModal =
+        id;
 
     setTimeout(() => {
-        firstField?.focus();
-    }, 0);
+        modal
+            .querySelector(
+                "textarea, input, select"
+            )
+            ?.focus();
+    }, 30);
 }
 
 function closeModal(id) {
     const modal =
-        document.getElementById(id);
+        document.getElementById(
+            id
+        );
 
     if (!modal) {
         return;
     }
 
     modal.classList.remove(
-        "visible"
+        "open"
     );
 
     modal.setAttribute(
         "aria-hidden",
         "true"
     );
-}
 
-function extractOutput(data) {
     if (
-        typeof data ===
-        "string"
+        activeModal === id
     ) {
-        return data.trim();
+        activeModal = null;
     }
 
-    return String(
-        data?.output_text ||
-        data?.output ||
-        data?.message ||
-        data?.content ||
-        ""
-    ).trim();
+    if (
+        !document.querySelector(
+            ".modal.open"
+        )
+    ) {
+        document.body.classList.remove(
+            "modal-open"
+        );
+    }
+}
+
+async function shareText(
+    text
+) {
+    try {
+        if (
+            navigator.share
+        ) {
+            await navigator.share({
+                title:
+                    "Wor3do",
+                text
+            });
+
+            return true;
+        }
+
+        return await copyText(
+            text
+        );
+    } catch {
+        return false;
+    }
+}
+
+async function copyText(
+    text
+) {
+    try {
+        await navigator.clipboard.writeText(
+            text
+        );
+
+        return true;
+    } catch {
+        const textarea =
+            document.createElement(
+                "textarea"
+            );
+
+        textarea.value =
+            text;
+
+        textarea.setAttribute(
+            "readonly",
+            ""
+        );
+
+        textarea.style.position =
+            "fixed";
+
+        textarea.style.opacity =
+            "0";
+
+        document.body.appendChild(
+            textarea
+        );
+
+        textarea.select();
+
+        let copied =
+            false;
+
+        try {
+            copied =
+                document.execCommand(
+                    "copy"
+                );
+        } catch {}
+
+        textarea.remove();
+
+        return copied;
+    }
 }
 
 async function parseResponse(
@@ -2264,12 +2980,55 @@ async function parseResponse(
     }
 
     try {
-        return JSON.parse(text);
+        return JSON.parse(
+            text
+        );
     } catch {
         return {
-            output: text
+            output:
+                text
         };
     }
+}
+
+function extractOutput(
+    data
+) {
+    if (
+        typeof data ===
+        "string"
+    ) {
+        return data.trim();
+    }
+
+    if (
+        Array.isArray(
+            data?.choices
+        )
+    ) {
+        const choice =
+            data.choices[0];
+
+        const content =
+            choice?.message
+                ?.content;
+
+        if (
+            typeof content ===
+            "string"
+        ) {
+            return content.trim();
+        }
+    }
+
+    return String(
+        data?.output_text ||
+        data?.output ||
+        data?.response ||
+        data?.message ||
+        data?.content ||
+        ""
+    ).trim();
 }
 
 function fetchWithTimeout(
@@ -2281,7 +3040,7 @@ function fetchWithTimeout(
         new AbortController();
 
     const timer =
-        window.setTimeout(
+        setTimeout(
             () =>
                 controller.abort(),
             timeout
@@ -2294,81 +3053,17 @@ function fetchWithTimeout(
             signal:
                 controller.signal
         }
-    ).finally(() =>
-        window.clearTimeout(timer)
+    ).finally(
+        () =>
+            clearTimeout(
+                timer
+            )
     );
 }
 
-function fileToDataURL(file) {
-    return new Promise(
-        (resolve, reject) => {
-            const reader =
-                new FileReader();
-
-            reader.onload = () =>
-                resolve(
-                    reader.result
-                );
-
-            reader.onerror = () =>
-                reject(
-                    new Error(
-                        "Image reading failed."
-                    )
-                );
-
-            reader.readAsDataURL(
-                file
-            );
-        }
-    );
-}
-
-async function copyText(text) {
-    try {
-        await navigator.clipboard.writeText(
-            text
-        );
-
-        return true;
-    } catch {
-        const area =
-            document.createElement(
-                "textarea"
-            );
-
-        area.value =
-            text;
-
-        area.setAttribute(
-            "readonly",
-            ""
-        );
-
-        area.style.position =
-            "fixed";
-
-        area.style.opacity =
-            "0";
-
-        document.body.appendChild(
-            area
-        );
-
-        area.select();
-
-        const copied =
-            document.execCommand(
-                "copy"
-            );
-
-        area.remove();
-
-        return copied;
-    }
-}
-
-function friendlyError(error) {
+function friendlyError(
+    error
+) {
     if (
         error?.name ===
         "AbortError"
@@ -2381,7 +3076,7 @@ function friendlyError(error) {
             "Failed to fetch"
         )
     ) {
-        return "The AI service could not be reached. Check the worker URL and your internet connection.";
+        return "The AI service could not be reached. Check your worker URL and internet connection.";
     }
 
     return (
@@ -2390,35 +3085,45 @@ function friendlyError(error) {
     );
 }
 
-function showToast(message) {
-    const toast =
-        document.getElementById(
-            "toast"
-        );
+function readStorage(
+    key,
+    fallback
+) {
+    try {
+        const value =
+            localStorage.getItem(
+                key
+            );
 
-    toast.textContent =
-        message;
-
-    toast.classList.add(
-        "visible"
-    );
-
-    clearTimeout(
-        toastTimer
-    );
-
-    toastTimer =
-        window.setTimeout(
-            () => {
-                toast.classList.remove(
-                    "visible"
-                );
-            },
-            2800
-        );
+        return value !== null
+            ? JSON.parse(value)
+            : fallback;
+    } catch {
+        return fallback;
+    }
 }
 
-function getInitials(name) {
+function writeStorage(
+    key,
+    value
+) {
+    try {
+        localStorage.setItem(
+            key,
+            JSON.stringify(
+                value
+            )
+        );
+
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+function getInitials(
+    name
+) {
     return String(
         name || ""
     )
@@ -2426,59 +3131,46 @@ function getInitials(name) {
         .split(/\s+/)
         .filter(Boolean)
         .slice(0, 2)
-        .map(
-            part =>
-                part
-                    .charAt(0)
-                    .toUpperCase()
+        .map(part =>
+            part
+                .charAt(0)
+                .toUpperCase()
         )
         .join("");
 }
 
-function formatBytes(bytes) {
-    if (bytes < 1024) {
-        return `${bytes} B`;
-    }
-
-    if (
-        bytes <
-        1024 * 1024
-    ) {
-        return `${(
-            bytes / 1024
-        ).toFixed(1)} KB`;
-    }
-
-    return `${(
-        bytes /
-        (1024 * 1024)
-    ).toFixed(1)} MB`;
-}
-
-function formatDate(timestamp) {
-    if (!timestamp) {
+function formatDate(
+    value
+) {
+    if (!value) {
         return "Recently";
     }
 
-    return new Intl.DateTimeFormat(
-        undefined,
-        {
-            month: "short",
-            day: "numeric",
-            year: "numeric"
-        }
-    ).format(
-        new Date(timestamp)
-    );
+    try {
+        return new Intl.DateTimeFormat(
+            undefined,
+            {
+                month: "short",
+                day: "numeric",
+                year: "numeric"
+            }
+        ).format(
+            new Date(
+                value
+            )
+        );
+    } catch {
+        return "Recently";
+    }
 }
 
 function trimText(
-    text,
+    value,
     length
 ) {
-    const value =
+    const text =
         String(
-            text || ""
+            value || ""
         )
             .replace(
                 /\s+/g,
@@ -2486,56 +3178,82 @@ function trimText(
             )
             .trim();
 
-    return value.length >
+    return text.length >
         length
-        ? `${value.slice(
+        ? `${text.slice(
               0,
               length - 1
           )}…`
-        : value;
+        : text;
 }
 
-function escapeHTML(value) {
-    return String(value)
-        .replaceAll(
-            "&",
-            "&amp;"
-        )
-        .replaceAll(
-            "<",
-            "&lt;"
-        )
-        .replaceAll(
-            ">",
-            "&gt;"
-        )
-        .replaceAll(
-            '"',
-            "&quot;"
-        )
-        .replaceAll(
-            "'",
-            "&#039;"
+function capitalize(
+    value
+) {
+    const text =
+        String(
+            value || ""
         );
+
+    return (
+        text.charAt(0).toUpperCase() +
+        text.slice(1)
+    );
 }
 
-function uid() {
+function createId() {
     return `w_${Date.now()}_${Math.random()
         .toString(36)
         .slice(2, 10)}`;
 }
 
-function capitalize(value) {
-    return (
-        value.charAt(0).toUpperCase() +
-        value.slice(1)
-    );
-}
-
-function clonePosts() {
+function cloneDefaultPosts() {
     return DEFAULT_POSTS.map(
         post => ({
             ...post
         })
     );
+}
+
+function escapeClass(
+    value
+) {
+    return String(
+        value || ""
+    ).replace(
+        /[^a-zA-Z0-9_-]/g,
+        ""
+    );
+}
+
+function showToast(
+    message
+) {
+    const toast =
+        $("#toast");
+
+    if (!toast) {
+        return;
+    }
+
+    toast.textContent =
+        message;
+
+    toast.classList.add(
+        "show"
+    );
+
+    clearTimeout(
+        toastTimer
+    );
+
+    toastTimer =
+        setTimeout(
+            () => {
+                toast.classList.remove(
+                    "show"
+                );
+            },
+            2800
+        );
 }
