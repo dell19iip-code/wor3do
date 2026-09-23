@@ -6,90 +6,122 @@
     <title>Wor3do</title>
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
 <div class="app">
 
     <aside class="sidebar">
-        <div class="logo">wor3do</div>
 
-        <button class="new-chat-button" onclick="newChat()">+ New Chat</button>
+        <div class="brand">
+            <div class="brand-mark">W</div>
+            <span>Wor3do</span>
+        </div>
 
-        <nav>
+        <button class="new-chat" onclick="newChat()">
+            <span>＋</span>
+            New chat
+        </button>
+
+        <nav class="navigation">
+
             <button class="nav-item active" data-page="chat" onclick="showPage('chat')">
                 <span>💬</span>
-                <span>Chat</span>
-            </button>
-
-            <button class="nav-item" data-page="courses" onclick="showPage('courses')">
-                <span>📚</span>
-                <span>My Courses</span>
+                Chat
             </button>
 
             <button class="nav-item" data-page="explore" onclick="showPage('explore')">
-                <span>🌎</span>
-                <span>Explore</span>
+                <span>◈</span>
+                Explore
             </button>
 
-            <button class="nav-item" data-page="profile" onclick="showPage('profile')">
-                <span>👤</span>
-                <span>My Profile</span>
+            <button class="nav-item" data-page="courses" onclick="showPage('courses')">
+                <span>▣</span>
+                Courses
             </button>
+
         </nav>
 
         <div class="sidebar-bottom">
-            <button class="nav-item" onclick="showMemory()">
-                <span>🧠</span>
-                <span>Memory</span>
+
+            <button class="nav-item" data-page="settings" onclick="showPage('settings')">
+                <span>⚙</span>
+                Settings
             </button>
 
-            <button class="nav-item" onclick="showSettings()">
-                <span>⚙️</span>
-                <span>Settings</span>
-            </button>
+            <div class="profile-mini" onclick="showPage('settings')">
+                <div class="profile-avatar">U</div>
+                <div>
+                    <strong>Your profile</strong>
+                    <small>Account settings</small>
+                </div>
+            </div>
+
         </div>
+
     </aside>
 
-    <main class="main">
 
-        <header class="mobile-header">
-            <div class="logo">wor3do</div>
-            <button onclick="toggleSidebar()">☰</button>
-        </header>
+    <main class="content">
 
         <section id="page-chat" class="page active-page">
 
-            <div class="chat-header">
+            <header class="page-header chat-header">
                 <div>
-                    <h1>Wor3do</h1>
-                    <span>● AI online</span>
+                    <h1>Chat</h1>
+                    <p>Talk with your AI assistant.</p>
                 </div>
 
-                <button class="model-button">
-                    Gemini
-                </button>
+                <div class="ai-status">
+                    <span></span>
+                    AI online
+                </div>
+            </header>
+
+
+            <div class="chat-area" id="chatBox">
+
+                <div class="welcome-card">
+
+                    <div class="welcome-icon">W</div>
+
+                    <h2>What can I help you with?</h2>
+
+                    <p>
+                        Ask questions, learn something new, create ideas,
+                        write, analyze, or simply talk.
+                    </p>
+
+                    <div class="suggestions">
+                        <button onclick="useSuggestion('Explain quantum mechanics simply')">
+                            Explain something
+                        </button>
+
+                        <button onclick="useSuggestion('Help me learn a new skill')">
+                            Learn a skill
+                        </button>
+
+                        <button onclick="useSuggestion('Give me some creative ideas')">
+                            Get ideas
+                        </button>
+                    </div>
+
+                </div>
+
             </div>
 
-            <section class="chat-box" id="chatBox"></section>
 
-            <div class="quick-actions">
-                <button onclick="quickPrompt('Teach me this topic step by step.')">📖 Learn</button>
-                <button onclick="quickPrompt('Create a complete course about this topic.')">🎓 Course</button>
-                <button onclick="quickPrompt('Help me create an image.')">🖼️ Image</button>
-                <button onclick="quickPrompt('Help me create a short video.')">🎬 Video</button>
-            </div>
+            <div class="chat-input-wrapper">
 
-            <div id="imagePreview" class="image-preview"></div>
+                <div class="image-preview-container" id="imagePreviewContainer"></div>
 
-            <section class="input-area">
-
-                <div class="input-container">
+                <div class="chat-input">
 
                     <button
-                        class="tool-button"
+                        class="attach-button"
                         onclick="document.getElementById('imageInput').click()"
-                    >
-                        +
+                        title="Attach image">
+                        ＋
                     </button>
 
                     <input
@@ -102,187 +134,291 @@
                     <textarea
                         id="userInput"
                         placeholder="Message Wor3do..."
-                        rows="1"
-                        maxlength="10000"
-                    ></textarea>
+                        rows="1"></textarea>
 
                     <button
-                        id="stopButton"
-                        class="stop-button"
-                        onclick="stopGeneration()"
-                        hidden
-                    >
-                        ■
-                    </button>
-
-                    <button
-                        id="sendButton"
                         class="send-button"
-                        onclick="sendMessage()"
-                    >
+                        id="sendButton"
+                        onclick="sendMessage()">
                         ↑
                     </button>
 
                 </div>
 
-                <div class="input-footer">
-                    <span>Wor3do can chat, teach, create and analyze.</span>
-                    <span id="charCount">0 / 10,000</span>
+                <div class="input-note">
+                    Wor3do can make mistakes. Check important information.
                 </div>
 
-            </section>
-
-        </section>
-
-        <section id="page-courses" class="page">
-
-            <div class="page-header">
-                <div>
-                    <h1>My Courses</h1>
-                    <p>Create and organize your courses.</p>
-                </div>
-
-                <button class="primary-button" onclick="createCourse()">
-                    + Create Course
-                </button>
             </div>
 
-            <div id="coursesContainer" class="course-grid"></div>
-
         </section>
+
 
         <section id="page-explore" class="page">
 
-            <div class="page-header">
+            <header class="page-header">
                 <div>
                     <h1>Explore</h1>
                     <p>Discover what people are creating with Wor3do.</p>
                 </div>
-            </div>
+
+                <button class="primary-button">
+                    + Create post
+                </button>
+            </header>
+
 
             <div class="explore-tabs">
-                <button class="explore-tab active">For You</button>
-                <button class="explore-tab">Courses</button>
-                <button class="explore-tab">Reels</button>
+                <button class="explore-tab active">For you</button>
+                <button class="explore-tab">Popular</button>
+                <button class="explore-tab">Learning</button>
+                <button class="explore-tab">Creative</button>
             </div>
 
-            <div class="explore-grid">
 
-                <div class="explore-card">
-                    <div class="explore-placeholder">🎬</div>
-                    <h3>AI Creations</h3>
-                    <p>Short videos and creative projects.</p>
-                </div>
+            <div class="post-grid">
 
-                <div class="explore-card">
-                    <div class="explore-placeholder">🎓</div>
-                    <h3>Learn Something New</h3>
-                    <p>Courses created by the community.</p>
-                </div>
-
-                <div class="explore-card">
-                    <div class="explore-placeholder">✨</div>
-                    <h3>Coming Soon</h3>
-                    <p>Community-created AI content.</p>
-                </div>
-
-            </div>
-
-        </section>
-
-        <section id="page-profile" class="page">
-
-            <div class="profile-header">
-                <div class="profile-avatar">W</div>
-
-                <div>
-                    <h1>My Profile</h1>
-                    <p>Your Wor3do profile and creations.</p>
-                </div>
-            </div>
-
-            <div class="login-card">
-
-                <div class="login-icon">G</div>
-
-                <h2>Sign in with Google</h2>
-
-                <p>
-                    Sign in to sync your chats, courses, memory and profile.
-                </p>
-
-                <button class="google-button" onclick="googleLogin()">
-                    Continue with Google
-                </button>
-
-                <small>Google authentication will be connected later.</small>
-
-            </div>
-
-            <div class="profile-section">
-
-                <h2>Your Activity</h2>
-
-                <div class="stats">
-
-                    <div class="stat">
-                        <strong id="courseCount">0</strong>
-                        <span>Courses</span>
+                <article class="post-card">
+                    <div class="post-user">
+                        <div class="post-avatar">A</div>
+                        <div>
+                            <strong>Alex</strong>
+                            <span>2h ago</span>
+                        </div>
                     </div>
 
-                    <div class="stat">
-                        <strong>0</strong>
-                        <span>Posts</span>
-                    </div>
+                    <h3>How I learned Python with AI</h3>
 
-                    <div class="stat">
-                        <strong>0</strong>
-                        <span>Followers</span>
-                    </div>
-
-                </div>
-
-            </div>
-
-        </section>
-
-        <section id="page-memory" class="page">
-
-            <div class="page-header">
-                <div>
-                    <h1>Memory</h1>
-                    <p>Control what Wor3do remembers about you.</p>
-                </div>
-            </div>
-
-            <div class="memory-card">
-
-                <div class="memory-icon">🧠</div>
-
-                <div>
-                    <h2>Wor3do Memory</h2>
                     <p>
-                        Wor3do will eventually be able to remember
-                        useful information across conversations.
+                        I used AI to create a learning plan and practice every day.
                     </p>
-                </div>
 
-                <label class="toggle">
-                    <input type="checkbox" id="memoryToggle">
-                    <span></span>
-                </label>
-
-            </div>
-
-            <div class="memory-list">
-                <h2>Remembered Information</h2>
-                <div id="memoryItems">
-                    <div class="empty-state small">
-                        Nothing has been saved yet.
+                    <div class="post-footer">
+                        <span>♡ 124</span>
+                        <span>💬 18</span>
+                        <span>↗ Share</span>
                     </div>
-                </div>
+                </article>
+
+
+                <article class="post-card">
+                    <div class="post-user">
+                        <div class="post-avatar">M</div>
+                        <div>
+                            <strong>Maria</strong>
+                            <span>5h ago</span>
+                        </div>
+                    </div>
+
+                    <h3>My complete photography course</h3>
+
+                    <p>
+                        Built my first course with Wor3do. Starting from the basics.
+                    </p>
+
+                    <div class="post-footer">
+                        <span>♡ 89</span>
+                        <span>💬 12</span>
+                        <span>↗ Share</span>
+                    </div>
+                </article>
+
+
+                <article class="post-card">
+                    <div class="post-user">
+                        <div class="post-avatar">J</div>
+                        <div>
+                            <strong>James</strong>
+                            <span>1d ago</span>
+                        </div>
+                    </div>
+
+                    <h3>Understanding the universe</h3>
+
+                    <p>
+                        A simple explanation of black holes, galaxies and space.
+                    </p>
+
+                    <div class="post-footer">
+                        <span>♡ 201</span>
+                        <span>💬 31</span>
+                        <span>↗ Share</span>
+                    </div>
+                </article>
+
             </div>
 
         </section>
 
-        <section id="page-settings" class="
+
+        <section id="page-courses" class="page">
+
+            <header class="page-header">
+                <div>
+                    <h1>Courses</h1>
+                    <p>Build complete learning paths with AI.</p>
+                </div>
+
+                <button class="primary-button" onclick="openCourseCreator()">
+                    + Create course
+                </button>
+            </header>
+
+
+            <div class="course-creator" id="courseCreator">
+
+                <div class="creator-header">
+                    <div>
+                        <h2>Create a course</h2>
+                        <p>Tell Wor3do what you want to learn.</p>
+                    </div>
+
+                    <button onclick="closeCourseCreator()">×</button>
+                </div>
+
+                <input
+                    id="courseTopic"
+                    class="course-input"
+                    placeholder="Example: Learn digital marketing from beginner to advanced"
+                >
+
+                <div class="creator-options">
+
+                    <select id="courseLevel">
+                        <option value="Beginner">Beginner</option>
+                        <option value="Intermediate">Intermediate</option>
+                        <option value="Advanced">Advanced</option>
+                    </select>
+
+                    <button class="primary-button" onclick="createCourse()">
+                        Create with AI
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <div id="coursesList" class="courses-list">
+
+                <div class="empty-courses">
+
+                    <div class="empty-icon">▣</div>
+
+                    <h2>Your courses</h2>
+
+                    <p>
+                        Courses you create will appear here.
+                    </p>
+
+                    <button class="secondary-button" onclick="openCourseCreator()">
+                        Create your first course
+                    </button>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <section id="page-settings" class="page">
+
+            <header class="page-header">
+                <div>
+                    <h1>Settings</h1>
+                    <p>Manage your Wor3do account and preferences.</p>
+                </div>
+            </header>
+
+
+            <div class="settings-layout">
+
+                <div class="settings-menu">
+
+                    <button class="settings-item active">
+                        <span>👤</span>
+                        Profile
+                    </button>
+
+                    <button class="settings-item">
+                        <span>🔔</span>
+                        Notifications
+                    </button>
+
+                    <button class="settings-item">
+                        <span>🧠</span>
+                        Memory
+                    </button>
+
+                    <button class="settings-item">
+                        <span>🎨</span>
+                        Appearance
+                    </button>
+
+                    <button class="settings-item">
+                        <span>🔒</span>
+                        Privacy
+                    </button>
+
+                </div>
+
+
+                <div class="settings-panel">
+
+                    <h2>Profile</h2>
+                    <p class="settings-description">
+                        Your public and personal account information.
+                    </p>
+
+                    <div class="profile-large">
+                        <div class="profile-avatar large">U</div>
+
+                        <div>
+                            <strong>Your profile</strong>
+                            <p>Google sign-in will be connected here.</p>
+                        </div>
+                    </div>
+
+                    <div class="setting-row">
+                        <div>
+                            <strong>Display name</strong>
+                            <p>Your name shown across Wor3do.</p>
+                        </div>
+
+                        <input
+                            class="setting-input"
+                            placeholder="Your name"
+                        >
+                    </div>
+
+                    <div class="setting-row">
+                        <div>
+                            <strong>About you</strong>
+                            <p>A short description for your profile.</p>
+                        </div>
+
+                        <input
+                            class="setting-input"
+                            placeholder="Tell people about yourself"
+                        >
+                    </div>
+
+                    <button class="primary-button">
+                        Save changes
+                    </button>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+</div>
+
+<script src="script.js"></script>
+
+</body>
+</html>
