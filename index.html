@@ -3,422 +3,482 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wor3do</title>
+    <meta name="theme-color" content="#101214">
+    <meta name="description" content="Wor3do — chat, learn, create courses, and explore ideas with AI.">
+    <title>Wor3do — AI that helps you learn and create</title>
     <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
+    <div class="app-shell">
+        <div class="mobile-backdrop" id="mobileBackdrop"></div>
 
-<div class="app">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-top">
+                <a class="brand" href="#" data-page-link="chat" aria-label="Wor3do home">
+                    <span class="brand-mark">W</span>
+                    <span class="brand-name">Wor3do</span>
+                </a>
 
-    <aside class="sidebar">
+                <button class="new-chat-button" id="newChatButton" type="button">
+                    <span class="icon">＋</span>
+                    <span>New chat</span>
+                </button>
 
-        <div class="brand">
-            <div class="brand-mark">W</div>
-            <span>Wor3do</span>
-        </div>
-
-        <button class="new-chat" onclick="newChat()">
-            <span>＋</span>
-            New chat
-        </button>
-
-        <nav class="navigation">
-
-            <button class="nav-item active" data-page="chat" onclick="showPage('chat')">
-                <span>💬</span>
-                Chat
-            </button>
-
-            <button class="nav-item" data-page="explore" onclick="showPage('explore')">
-                <span>◈</span>
-                Explore
-            </button>
-
-            <button class="nav-item" data-page="courses" onclick="showPage('courses')">
-                <span>▣</span>
-                Courses
-            </button>
-
-        </nav>
-
-        <div class="sidebar-bottom">
-
-            <button class="nav-item" data-page="settings" onclick="showPage('settings')">
-                <span>⚙</span>
-                Settings
-            </button>
-
-            <div class="profile-mini" onclick="showPage('settings')">
-                <div class="profile-avatar">U</div>
-                <div>
-                    <strong>Your profile</strong>
-                    <small>Account settings</small>
-                </div>
-            </div>
-
-        </div>
-
-    </aside>
-
-
-    <main class="content">
-
-        <section id="page-chat" class="page active-page">
-
-            <header class="page-header chat-header">
-                <div>
-                    <h1>Chat</h1>
-                    <p>Talk with your AI assistant.</p>
-                </div>
-
-                <div class="ai-status">
-                    <span></span>
-                    AI online
-                </div>
-            </header>
-
-
-            <div class="chat-area" id="chatBox">
-
-                <div class="welcome-card">
-
-                    <div class="welcome-icon">W</div>
-
-                    <h2>What can I help you with?</h2>
-
-                    <p>
-                        Ask questions, learn something new, create ideas,
-                        write, analyze, or simply talk.
-                    </p>
-
-                    <div class="suggestions">
-                        <button onclick="useSuggestion('Explain quantum mechanics simply')">
-                            Explain something
-                        </button>
-
-                        <button onclick="useSuggestion('Help me learn a new skill')">
-                            Learn a skill
-                        </button>
-
-                        <button onclick="useSuggestion('Give me some creative ideas')">
-                            Get ideas
-                        </button>
-                    </div>
-
-                </div>
-
-            </div>
-
-
-            <div class="chat-input-wrapper">
-
-                <div class="image-preview-container" id="imagePreviewContainer"></div>
-
-                <div class="chat-input">
-
-                    <button
-                        class="attach-button"
-                        onclick="document.getElementById('imageInput').click()"
-                        title="Attach image">
-                        ＋
+                <nav class="main-nav" aria-label="Main navigation">
+                    <button class="nav-item active" type="button" data-page="chat">
+                        <span class="nav-icon" aria-hidden="true">⌁</span>
+                        <span>Chat</span>
                     </button>
 
-                    <input
-                        type="file"
-                        id="imageInput"
-                        accept="image/*"
-                        hidden
-                    >
-
-                    <textarea
-                        id="userInput"
-                        placeholder="Message Wor3do..."
-                        rows="1"></textarea>
-
-                    <button
-                        class="send-button"
-                        id="sendButton"
-                        onclick="sendMessage()">
-                        ↑
+                    <button class="nav-item" type="button" data-page="explore">
+                        <span class="nav-icon" aria-hidden="true">◇</span>
+                        <span>Explore</span>
                     </button>
 
-                </div>
-
-                <div class="input-note">
-                    Wor3do can make mistakes. Check important information.
-                </div>
-
+                    <button class="nav-item" type="button" data-page="courses">
+                        <span class="nav-icon" aria-hidden="true">▣</span>
+                        <span>Courses</span>
+                    </button>
+                </nav>
             </div>
 
-        </section>
-
-
-        <section id="page-explore" class="page">
-
-            <header class="page-header">
-                <div>
-                    <h1>Explore</h1>
-                    <p>Discover what people are creating with Wor3do.</p>
-                </div>
-
-                <button class="primary-button">
-                    + Create post
+            <div class="sidebar-bottom">
+                <button class="nav-item" type="button" data-page="settings">
+                    <span class="nav-icon" aria-hidden="true">⚙</span>
+                    <span>Settings</span>
                 </button>
+
+                <button class="profile-mini" id="profileShortcut" type="button">
+                    <span class="avatar" id="sidebarAvatar">U</span>
+
+                    <span class="profile-mini-copy">
+                        <strong id="sidebarProfileName">Your profile</strong>
+                        <small>Account settings</small>
+                    </span>
+
+                    <span class="profile-arrow">›</span>
+                </button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="mobile-header">
+                <button class="icon-button" id="openSidebarButton" type="button" aria-label="Open navigation">☰</button>
+                <strong>Wor3do</strong>
+                <button class="icon-button" id="mobileNewChatButton" type="button" aria-label="New chat">＋</button>
             </header>
 
-
-            <div class="explore-tabs">
-                <button class="explore-tab active">For you</button>
-                <button class="explore-tab">Popular</button>
-                <button class="explore-tab">Learning</button>
-                <button class="explore-tab">Creative</button>
-            </div>
-
-
-            <div class="post-grid">
-
-                <article class="post-card">
-                    <div class="post-user">
-                        <div class="post-avatar">A</div>
-                        <div>
-                            <strong>Alex</strong>
-                            <span>2h ago</span>
-                        </div>
-                    </div>
-
-                    <h3>How I learned Python with AI</h3>
-
-                    <p>
-                        I used AI to create a learning plan and practice every day.
-                    </p>
-
-                    <div class="post-footer">
-                        <span>♡ 124</span>
-                        <span>💬 18</span>
-                        <span>↗ Share</span>
-                    </div>
-                </article>
-
-
-                <article class="post-card">
-                    <div class="post-user">
-                        <div class="post-avatar">M</div>
-                        <div>
-                            <strong>Maria</strong>
-                            <span>5h ago</span>
-                        </div>
-                    </div>
-
-                    <h3>My complete photography course</h3>
-
-                    <p>
-                        Built my first course with Wor3do. Starting from the basics.
-                    </p>
-
-                    <div class="post-footer">
-                        <span>♡ 89</span>
-                        <span>💬 12</span>
-                        <span>↗ Share</span>
-                    </div>
-                </article>
-
-
-                <article class="post-card">
-                    <div class="post-user">
-                        <div class="post-avatar">J</div>
-                        <div>
-                            <strong>James</strong>
-                            <span>1d ago</span>
-                        </div>
-                    </div>
-
-                    <h3>Understanding the universe</h3>
-
-                    <p>
-                        A simple explanation of black holes, galaxies and space.
-                    </p>
-
-                    <div class="post-footer">
-                        <span>♡ 201</span>
-                        <span>💬 31</span>
-                        <span>↗ Share</span>
-                    </div>
-                </article>
-
-            </div>
-
-        </section>
-
-
-        <section id="page-courses" class="page">
-
-            <header class="page-header">
-                <div>
-                    <h1>Courses</h1>
-                    <p>Build complete learning paths with AI.</p>
-                </div>
-
-                <button class="primary-button" onclick="openCourseCreator()">
-                    + Create course
-                </button>
-            </header>
-
-
-            <div class="course-creator" id="courseCreator">
-
-                <div class="creator-header">
+            <section class="page active-page" id="page-chat" data-page-section="chat">
+                <header class="page-header chat-page-header">
                     <div>
-                        <h2>Create a course</h2>
-                        <p>Tell Wor3do what you want to learn.</p>
+                        <div class="eyebrow">AI workspace</div>
+                        <h1>Chat</h1>
+                        <p>Ask questions, learn faster, create ideas, or build something with AI.</p>
                     </div>
 
-                    <button onclick="closeCourseCreator()">×</button>
-                </div>
-
-                <input
-                    id="courseTopic"
-                    class="course-input"
-                    placeholder="Example: Learn digital marketing from beginner to advanced"
-                >
-
-                <div class="creator-options">
-
-                    <select id="courseLevel">
-                        <option value="Beginner">Beginner</option>
-                        <option value="Intermediate">Intermediate</option>
-                        <option value="Advanced">Advanced</option>
-                    </select>
-
-                    <button class="primary-button" onclick="createCourse()">
-                        Create with AI
-                    </button>
-
-                </div>
-
-            </div>
-
-
-            <div id="coursesList" class="courses-list">
-
-                <div class="empty-courses">
-
-                    <div class="empty-icon">▣</div>
-
-                    <h2>Your courses</h2>
-
-                    <p>
-                        Courses you create will appear here.
-                    </p>
-
-                    <button class="secondary-button" onclick="openCourseCreator()">
-                        Create your first course
-                    </button>
-
-                </div>
-
-            </div>
-
-        </section>
-
-
-        <section id="page-settings" class="page">
-
-            <header class="page-header">
-                <div>
-                    <h1>Settings</h1>
-                    <p>Manage your Wor3do account and preferences.</p>
-                </div>
-            </header>
-
-
-            <div class="settings-layout">
-
-                <div class="settings-menu">
-
-                    <button class="settings-item active">
-                        <span>👤</span>
-                        Profile
-                    </button>
-
-                    <button class="settings-item">
-                        <span>🔔</span>
-                        Notifications
-                    </button>
-
-                    <button class="settings-item">
-                        <span>🧠</span>
-                        Memory
-                    </button>
-
-                    <button class="settings-item">
-                        <span>🎨</span>
-                        Appearance
-                    </button>
-
-                    <button class="settings-item">
-                        <span>🔒</span>
-                        Privacy
-                    </button>
-
-                </div>
-
-
-                <div class="settings-panel">
-
-                    <h2>Profile</h2>
-                    <p class="settings-description">
-                        Your public and personal account information.
-                    </p>
-
-                    <div class="profile-large">
-                        <div class="profile-avatar large">U</div>
-
-                        <div>
-                            <strong>Your profile</strong>
-                            <p>Google sign-in will be connected here.</p>
-                        </div>
+                    <div class="status-pill">
+                        <span class="status-dot"></span>
+                        <span>AI online</span>
                     </div>
+                </header>
 
-                    <div class="setting-row">
-                        <div>
-                            <strong>Display name</strong>
-                            <p>Your name shown across Wor3do.</p>
-                        </div>
+                <div class="chat-layout">
+                    <div class="chat-area" id="chatBox" aria-live="polite"></div>
+                </div>
+
+                <div class="chat-composer-wrap">
+                    <div class="image-preview-container" id="imagePreviewContainer"></div>
+
+                    <div class="chat-composer">
+                        <button
+                            class="composer-icon-button"
+                            id="attachButton"
+                            type="button"
+                            aria-label="Attach an image"
+                            title="Attach image"
+                        >
+                            ＋
+                        </button>
 
                         <input
-                            class="setting-input"
-                            placeholder="Your name"
+                            id="imageInput"
+                            type="file"
+                            accept="image/png,image/jpeg,image/webp,image/gif"
+                            hidden
                         >
+
+                        <textarea
+                            id="userInput"
+                            rows="1"
+                            maxlength="8000"
+                            placeholder="Message Wor3do..."
+                            aria-label="Message Wor3do"
+                        ></textarea>
+
+                        <button
+                            class="send-button"
+                            id="sendButton"
+                            type="button"
+                            aria-label="Send message"
+                        >
+                            <span>↑</span>
+                        </button>
                     </div>
 
-                    <div class="setting-row">
-                        <div>
-                            <strong>About you</strong>
-                            <p>A short description for your profile.</p>
-                        </div>
+                    <div class="composer-footer">
+                        <span>Enter to send · Shift + Enter for a new line</span>
+                        <span>Wor3do can make mistakes. Check important information.</span>
+                    </div>
+                </div>
+            </section>
 
-                        <input
-                            class="setting-input"
-                            placeholder="Tell people about yourself"
-                        >
+            <section class="page" id="page-explore" data-page-section="explore">
+                <header class="page-header">
+                    <div>
+                        <div class="eyebrow">Community</div>
+                        <h1>Explore</h1>
+                        <p>Discover ideas, projects, learning paths, and creative work from the community.</p>
                     </div>
 
-                    <button class="primary-button">
-                        Save changes
+                    <button class="primary-button" id="createPostButton" type="button">
+                        ＋ Create post
                     </button>
+                </header>
 
+                <div class="tabs" id="exploreTabs" role="tablist" aria-label="Explore categories">
+                    <button class="tab active" type="button" data-category="all">For you</button>
+                    <button class="tab" type="button" data-category="popular">Popular</button>
+                    <button class="tab" type="button" data-category="learning">Learning</button>
+                    <button class="tab" type="button" data-category="creative">Creative</button>
                 </div>
 
-            </div>
+                <div class="post-grid" id="postGrid"></div>
+            </section>
 
-        </section>
+            <section class="page" id="page-courses" data-page-section="courses">
+                <header class="page-header">
+                    <div>
+                        <div class="eyebrow">Learning studio</div>
+                        <h1>Courses</h1>
+                        <p>Build complete learning paths with AI, from your first lesson to a full curriculum.</p>
+                    </div>
 
-    </main>
+                    <button class="primary-button" id="openCourseCreatorButton" type="button">
+                        ＋ Create course
+                    </button>
+                </header>
 
-</div>
+                <div class="course-creator" id="courseCreator" aria-hidden="true">
+                    <div class="creator-header">
+                        <div>
+                            <div class="eyebrow">AI course builder</div>
+                            <h2>Create a course</h2>
+                            <p>Describe what you want to learn and Wor3do will build the roadmap.</p>
+                        </div>
 
-<script src="script.js"></script>
+                        <button
+                            class="icon-button subtle"
+                            id="closeCourseCreatorButton"
+                            type="button"
+                            aria-label="Close course creator"
+                        >
+                            ×
+                        </button>
+                    </div>
 
+                    <div class="course-form">
+                        <label class="field-label" for="courseTopic">What do you want to learn?</label>
+
+                        <textarea
+                            id="courseTopic"
+                            class="course-input"
+                            rows="3"
+                            maxlength="1000"
+                            placeholder="Example: Learn digital marketing from beginner to advanced"
+                        ></textarea>
+
+                        <div class="creator-controls">
+                            <div class="select-wrap">
+                                <label class="field-label" for="courseLevel">Level</label>
+
+                                <select id="courseLevel">
+                                    <option value="Beginner">Beginner</option>
+                                    <option value="Intermediate">Intermediate</option>
+                                    <option value="Advanced">Advanced</option>
+                                </select>
+                            </div>
+
+                            <button
+                                class="primary-button creator-submit"
+                                id="createCourseButton"
+                                type="button"
+                            >
+                                Create with AI
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-heading">
+                    <div>
+                        <h2>Your courses</h2>
+                        <p id="courseCountLabel">0 courses</p>
+                    </div>
+                </div>
+
+                <div id="coursesList" class="courses-grid"></div>
+            </section>
+
+            <section class="page" id="page-settings" data-page-section="settings">
+                <header class="page-header">
+                    <div>
+                        <div class="eyebrow">Preferences</div>
+                        <h1>Settings</h1>
+                        <p>Control your profile, notifications, memory, appearance, and privacy.</p>
+                    </div>
+                </header>
+
+                <div class="settings-layout">
+                    <div class="settings-menu" role="tablist" aria-label="Settings">
+                        <button class="settings-item active" type="button" data-settings-panel="profile">
+                            <span>👤</span>
+                            Profile
+                        </button>
+
+                        <button class="settings-item" type="button" data-settings-panel="notifications">
+                            <span>🔔</span>
+                            Notifications
+                        </button>
+
+                        <button class="settings-item" type="button" data-settings-panel="memory">
+                            <span>🧠</span>
+                            Memory
+                        </button>
+
+                        <button class="settings-item" type="button" data-settings-panel="appearance">
+                            <span>🎨</span>
+                            Appearance
+                        </button>
+
+                        <button class="settings-item" type="button" data-settings-panel="privacy">
+                            <span>🔒</span>
+                            Privacy
+                        </button>
+                    </div>
+
+                    <div class="settings-panel">
+                        <div class="settings-content active" data-settings-content="profile">
+                            <h2>Profile</h2>
+
+                            <p class="settings-description">
+                                Your personal information used across your Wor3do workspace.
+                            </p>
+
+                            <div class="profile-large">
+                                <span class="avatar large" id="settingsAvatar">U</span>
+
+                                <div>
+                                    <strong id="settingsProfileTitle">Your profile</strong>
+                                    <p id="settingsProfileSubtitle">Customize your profile below.</p>
+                                </div>
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <strong>Display name</strong>
+                                    <p>Your name shown across Wor3do.</p>
+                                </div>
+
+                                <input
+                                    class="setting-input"
+                                    id="displayNameInput"
+                                    type="text"
+                                    maxlength="60"
+                                    placeholder="Your name"
+                                >
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <strong>About you</strong>
+                                    <p>A short description for your profile.</p>
+                                </div>
+
+                                <input
+                                    class="setting-input"
+                                    id="aboutInput"
+                                    type="text"
+                                    maxlength="160"
+                                    placeholder="Tell people about yourself"
+                                >
+                            </div>
+
+                            <button class="primary-button" id="saveProfileButton" type="button">
+                                Save changes
+                            </button>
+                        </div>
+
+                        <div class="settings-content" data-settings-content="notifications">
+                            <h2>Notifications</h2>
+
+                            <p class="settings-description">
+                                Choose which local notifications Wor3do should remember.
+                            </p>
+
+                            <div class="setting-row">
+                                <div>
+                                    <strong>Course creation</strong>
+                                    <p>Show a confirmation when an AI course is created.</p>
+                                </div>
+
+                                <button
+                                    class="toggle active"
+                                    type="button"
+                                    data-setting-toggle="courseNotifications"
+                                    aria-pressed="true"
+                                >
+                                    <span></span>
+                                </button>
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <strong>Community activity</strong>
+                                    <p>Show local updates when you create or save community content.</p>
+                                </div>
+
+                                <button
+                                    class="toggle active"
+                                    type="button"
+                                    data-setting-toggle="communityNotifications"
+                                    aria-pressed="true"
+                                >
+                                    <span></span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="settings-content" data-settings-content="memory">
+                            <h2>Memory</h2>
+
+                            <p class="settings-description">
+                                Control whether Wor3do stores your local chat history and courses in this browser.
+                            </p>
+
+                            <div class="setting-row">
+                                <div>
+                                    <strong>Save chat history</strong>
+                                    <p>Your conversations stay in this browser using local storage.</p>
+                                </div>
+
+                                <button
+                                    class="toggle active"
+                                    type="button"
+                                    data-setting-toggle="saveChat"
+                                    aria-pressed="true"
+                                >
+                                    <span></span>
+                                </button>
+                            </div>
+
+                            <div class="setting-row">
+                                <div>
+                                    <strong>Save courses</strong>
+                                    <p>Your generated course library stays available after a refresh.</p>
+                                </div>
+
+                                <button
+                                    class="toggle active"
+                                    type="button"
+                                    data-setting-toggle="saveCourses"
+                                    aria-pressed="true"
+                                >
+                                    <span></span>
+                                </button>
+                            </div>
+
+                            <button class="secondary-button danger-button" id="clearLocalDataButton" type="button">
+                                Clear local data
+                            </button>
+                        </div>
+
+                        <div class="settings-content" data-settings-content="appearance">
+                            <h2>Appearance</h2>
+
+                            <p class="settings-description">
+                                Choose how Wor3do looks in this browser.
+                            </p>
+
+                            <div class="appearance-options">
+                                <button
+                                    class="appearance-option active"
+                                    type="button"
+                                    data-theme-choice="light"
+                                >
+                                    <span class="theme-preview light-preview"></span>
+                                    <strong>Light</strong>
+                                    <small>Clean and bright</small>
+                                </button>
+
+                                <button
+                                    class="appearance-option"
+                                    type="button"
+                                    data-theme-choice="dark"
+                                >
+                                    <span class="theme-preview dark-preview"></span>
+                                    <strong>Dark</strong>
+                                    <small>Focused and low-light</small>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="settings-content" data-settings-content="privacy">
+                            <h2>Privacy</h2>
+
+                            <p class="settings-description">
+                                This version of Wor3do stores settings, courses, and chat history locally in your browser.
+                            </p>
+
+                            <div class="privacy-card">
+                                <strong>Local-first workspace</strong>
+                                <p>
+                                    No account system is included in this frontend build. Your saved browser data can be cleared from the Memory settings.
+                                </p>
+                            </div>
+
+                            <div class="privacy-card">
+                                <strong>AI requests</strong>
+                                <p>
+                                    Messages are sent to the worker endpoint configured in the JavaScript file when you use chat or course generation.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <div class="modal-backdrop" id="courseDetailBackdrop" aria-hidden="true">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="courseDetailTitle">
+            <button
+                class="modal-close"
+                id="closeCourseDetailButton"
+                type="button"
+                aria-label="Close"
+            >
+                ×
+            </button>
+
+            <div class="eyebrow">Course overview</div>
+            <h2 id="courseDetailTitle">Course</h2>
+            <p id="courseDetailMeta" class="modal-meta"></p>
+            <div id="courseDetailContent" class="course-detail-content"></div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
 </body>
 </html>
