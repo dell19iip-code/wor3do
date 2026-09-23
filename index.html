@@ -1,408 +1,1126 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#101214">
-    <meta name="description" content="Wor3do — an AI workspace for chatting, learning, creating courses, and exploring ideas.">
-    <title>Wor3do — AI workspace</title>
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    >
+
+    <meta
+        name="description"
+        content="Wor3do — chat with AI, discover ideas, and create complete learning courses."
+    >
+
+    <meta name="theme-color" content="#111315">
+
+    <title>Wor3do — AI Workspace</title>
+
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
     <div class="app" id="app">
-        <div class="mobile-overlay" id="mobileOverlay"></div>
 
-        <aside class="sidebar" id="sidebar">
+        <div
+            class="mobile-overlay"
+            id="mobileOverlay"
+            aria-hidden="true"
+        ></div>
+
+        <aside
+            class="sidebar"
+            id="sidebar"
+            aria-label="Wor3do navigation"
+        >
             <div class="sidebar-main">
-                <a href="#chat" class="brand" data-page="chat" aria-label="Wor3do home">
-                    <span class="brand-mark">W</span>
-                    <span class="brand-name">Wor3do</span>
+
+                <a
+                    href="#chat"
+                    class="brand"
+                    data-page="chat"
+                    aria-label="Go to Wor3do chat"
+                >
+                    <span
+                        class="brand-mark"
+                        aria-hidden="true"
+                    >
+                        W
+                    </span>
+
+                    <span class="brand-name">
+                        Wor3do
+                    </span>
                 </a>
 
-                <button class="new-chat-button" id="newChatButton" type="button">
-                    <span class="button-icon">＋</span>
+                <button
+                    class="new-chat-btn"
+                    id="newChatButton"
+                    type="button"
+                    aria-label="Start a new chat"
+                >
+                    <span aria-hidden="true">＋</span>
                     <span>New chat</span>
                 </button>
 
-                <nav class="main-navigation" aria-label="Main navigation">
-                    <button class="nav-item active" type="button" data-page="chat">
-                        <span class="nav-item-icon">⌁</span>
+                <nav
+                    class="nav"
+                    aria-label="Main navigation"
+                >
+                    <button
+                        class="nav-item active"
+                        type="button"
+                        data-page="chat"
+                        aria-current="page"
+                    >
+                        <span
+                            class="nav-icon"
+                            aria-hidden="true"
+                        >
+                            ⌂
+                        </span>
+
                         <span>Chat</span>
                     </button>
 
-                    <button class="nav-item" type="button" data-page="explore">
-                        <span class="nav-item-icon">◇</span>
+                    <button
+                        class="nav-item"
+                        type="button"
+                        data-page="explore"
+                    >
+                        <span
+                            class="nav-icon"
+                            aria-hidden="true"
+                        >
+                            ◉
+                        </span>
+
                         <span>Explore</span>
                     </button>
 
-                    <button class="nav-item" type="button" data-page="courses">
-                        <span class="nav-item-icon">▣</span>
+                    <button
+                        class="nav-item"
+                        type="button"
+                        data-page="courses"
+                    >
+                        <span
+                            class="nav-icon"
+                            aria-hidden="true"
+                        >
+                            ▣
+                        </span>
+
                         <span>Courses</span>
+                    </button>
+
+                    <button
+                        class="nav-item"
+                        type="button"
+                        data-page="settings"
+                    >
+                        <span
+                            class="nav-icon"
+                            aria-hidden="true"
+                        >
+                            ⚙
+                        </span>
+
+                        <span>Settings</span>
                     </button>
                 </nav>
             </div>
 
             <div class="sidebar-bottom">
-                <button class="nav-item" type="button" data-page="settings">
-                    <span class="nav-item-icon">⚙</span>
-                    <span>Settings</span>
-                </button>
 
-                <button class="profile-shortcut" id="profileShortcut" type="button">
-                    <span class="avatar" id="sidebarAvatar">U</span>
-
-                    <span class="profile-shortcut-copy">
-                        <strong id="sidebarProfileName">Your profile</strong>
-                        <small>Account settings</small>
+                <button
+                    class="profile-shortcut"
+                    id="profileShortcut"
+                    type="button"
+                    aria-label="Open your profile"
+                >
+                    <span
+                        class="avatar"
+                        id="sidebarAvatar"
+                        aria-hidden="true"
+                    >
+                        W
                     </span>
 
-                    <span class="profile-arrow">›</span>
+                    <span class="profile-shortcut-text">
+                        <strong id="sidebarProfileName">
+                            Wor3do User
+                        </strong>
+
+                        <span>
+                            Profile
+                        </span>
+                    </span>
                 </button>
+
             </div>
         </aside>
 
-        <main class="main-content">
+        <main class="main">
+
             <header class="mobile-header">
-                <button class="mobile-icon-button" id="openSidebarButton" type="button" aria-label="Open menu">☰</button>
-                <strong>Wor3do</strong>
-                <button class="mobile-icon-button" id="mobileNewChatButton" type="button" aria-label="New chat">＋</button>
+                <button
+                    class="mobile-menu-btn"
+                    id="mobileMenuButton"
+                    type="button"
+                    aria-label="Open navigation menu"
+                    aria-controls="sidebar"
+                    aria-expanded="false"
+                >
+                    ☰
+                </button>
+
+                <a
+                    href="#chat"
+                    class="mobile-brand"
+                    data-page="chat"
+                >
+                    Wor3do
+                </a>
+
+                <button
+                    class="mobile-new-chat-btn"
+                    id="mobileNewChatButton"
+                    type="button"
+                    aria-label="Start a new chat"
+                >
+                    ＋
+                </button>
             </header>
 
-            <section class="page active" id="page-chat" data-page-section="chat">
-                <header class="page-header chat-header">
+            <section
+                class="page active"
+                id="chatPage"
+                aria-labelledby="chatPageTitle"
+            >
+                <div class="chat-header">
                     <div>
-                        <div class="eyebrow">AI workspace</div>
-                        <h1>Chat</h1>
-                        <p>Ask questions, learn something new, plan ideas, analyze images, or build with AI.</p>
+                        <div class="page-eyebrow">
+                            AI WORKSPACE
+                        </div>
+
+                        <h1 id="chatPageTitle">
+                            Wor3do AI
+                        </h1>
+
+                        <div
+                            class="ai-status"
+                            role="status"
+                            aria-live="polite"
+                        >
+                            <span
+                                class="status-dot"
+                                aria-hidden="true"
+                            ></span>
+
+                            <span>
+                                AI online
+                            </span>
+                        </div>
                     </div>
+                </div>
 
-                    <div class="status-pill">
-                        <span class="status-dot"></span>
-                        <span>AI online</span>
-                    </div>
-                </header>
+                <div class="chat-area">
 
-                <div class="chat-area" id="chatBox" aria-live="polite"></div>
+                    <div
+                        class="chat-box"
+                        id="chatBox"
+                        aria-live="polite"
+                        aria-label="Chat messages"
+                    ></div>
 
-                <div class="composer-shell">
-                    <div class="image-preview-container" id="imagePreviewContainer"></div>
+                    <div
+                        class="image-preview"
+                        id="imagePreview"
+                        aria-live="polite"
+                    ></div>
 
-                    <div class="chat-composer" id="chatComposer">
+                    <form
+                        class="chat-composer"
+                        id="chatComposer"
+                        autocomplete="off"
+                    >
                         <button
-                            class="composer-button"
-                            id="attachButton"
                             type="button"
-                            aria-label="Attach image"
+                            class="attach-button"
+                            id="attachButton"
                             title="Attach image"
+                            aria-label="Attach image"
                         >
                             ＋
                         </button>
 
                         <input
-                            id="imageInput"
                             type="file"
+                            id="imageInput"
                             accept="image/png,image/jpeg,image/webp,image/gif"
                             hidden
+                            aria-label="Choose an image to attach"
                         >
+
+                        <label
+                            for="userInput"
+                            class="sr-only"
+                        >
+                            Message Wor3do
+                        </label>
 
                         <textarea
                             id="userInput"
                             rows="1"
                             maxlength="8000"
-                            placeholder="Message Wor3do..."
+                            placeholder="Ask Wor3do anything..."
                             aria-label="Message Wor3do"
+                            spellcheck="true"
+                            autocomplete="off"
                         ></textarea>
 
                         <button
+                            type="submit"
                             class="send-button"
                             id="sendButton"
-                            type="button"
+                            title="Send message"
                             aria-label="Send message"
                         >
-                            <span class="send-icon">↑</span>
-                            <span class="button-spinner" aria-hidden="true"></span>
+                            <span aria-hidden="true">↑</span>
                         </button>
-                    </div>
+                    </form>
 
                     <div class="composer-footer">
-                        <span>Enter to send · Shift + Enter for a new line</span>
-                        <span>Wor3do can make mistakes. Check important information.</span>
+                        <span>
+                            Enter to send · Shift + Enter for a new line
+                        </span>
+
+                        <span>
+                            Wor3do AI can make mistakes. Check important information.
+                        </span>
                     </div>
+
                 </div>
             </section>
 
-            <section class="page" id="page-explore" data-page-section="explore">
-                <header class="page-header">
+            <section
+                class="page"
+                id="explorePage"
+                aria-labelledby="explorePageTitle"
+            >
+                <div class="explore-topbar">
+
                     <div>
-                        <div class="eyebrow">Community</div>
-                        <h1>Explore</h1>
-                        <p>Discover ideas, learning paths, projects, and creative work from the community.</p>
-                    </div>
-
-                    <button class="primary-button" id="createPostButton" type="button">＋ Create post</button>
-                </header>
-
-                <div class="tabs" id="exploreTabs" role="tablist" aria-label="Explore categories">
-                    <button class="tab active" type="button" data-category="all">For you</button>
-                    <button class="tab" type="button" data-category="popular">Popular</button>
-                    <button class="tab" type="button" data-category="learning">Learning</button>
-                    <button class="tab" type="button" data-category="creative">Creative</button>
-                </div>
-
-                <div class="post-grid" id="postGrid"></div>
-            </section>
-
-            <section class="page" id="page-courses" data-page-section="courses">
-                <header class="page-header">
-                    <div>
-                        <div class="eyebrow">Learning studio</div>
-                        <h1>Courses</h1>
-                        <p>Create structured learning paths with AI and keep your course library in one place.</p>
-                    </div>
-
-                    <button class="primary-button" id="openCourseCreatorButton" type="button">＋ Create course</button>
-                </header>
-
-                <div class="course-creator" id="courseCreator" aria-hidden="true">
-                    <div class="creator-header">
-                        <div>
-                            <div class="eyebrow">AI course builder</div>
-                            <h2>Create a complete course</h2>
-                            <p>Describe the topic and choose the level. Wor3do will build the structure for you.</p>
+                        <div class="page-eyebrow">
+                            DISCOVER
                         </div>
 
-                        <button
-                            class="close-button"
-                            id="closeCourseCreatorButton"
-                            type="button"
-                            aria-label="Close course creator"
-                        >
-                            ×
-                        </button>
+                        <h1 id="explorePageTitle">
+                            Explore
+                        </h1>
+
+                        <p>
+                            Discover things selected for you by AI.
+                        </p>
                     </div>
 
-                    <form class="course-form" id="courseForm">
-                        <label class="field-label" for="courseTopic">What do you want to learn?</label>
+                    <button
+                        class="explore-refresh"
+                        id="exploreRefresh"
+                        type="button"
+                        aria-label="Refresh your explore feed"
+                    >
+                        <span aria-hidden="true">↻</span>
+                        Refresh
+                    </button>
 
-                        <textarea
-                            class="course-topic-input"
-                            id="courseTopic"
-                            rows="3"
-                            maxlength="1000"
-                            placeholder="Example: Learn digital marketing from beginner to advanced"
-                        ></textarea>
+                </div>
 
-                        <div class="course-form-row">
-                            <div class="field-group">
-                                <label class="field-label" for="courseLevel">Level</label>
+                <section
+                    class="explore-ai-bar"
+                    aria-label="Personalized AI feed"
+                >
+                    <div
+                        class="explore-ai-icon"
+                        aria-hidden="true"
+                    >
+                        ✦
+                    </div>
 
-                                <select id="courseLevel">
-                                    <option value="Beginner">Beginner</option>
-                                    <option value="Intermediate">Intermediate</option>
-                                    <option value="Advanced">Advanced</option>
-                                </select>
+                    <div class="explore-ai-text">
+                        <strong>
+                            Your AI feed
+                        </strong>
+
+                        <span id="exploreInterestText">
+                            Personalized according to what you watch and search for.
+                        </span>
+                    </div>
+
+                    <button
+                        id="exploreCustomizeButton"
+                        type="button"
+                    >
+                        Customize
+                    </button>
+                </section>
+
+                <nav
+                    class="explore-tabs"
+                    id="exploreTabs"
+                    aria-label="Explore categories"
+                >
+                    <button
+                        class="explore-tab active"
+                        type="button"
+                        data-category="for-you"
+                        aria-current="page"
+                    >
+                        For you
+                    </button>
+
+                    <button
+                        class="explore-tab"
+                        type="button"
+                        data-category="learning"
+                    >
+                        Learning
+                    </button>
+
+                    <button
+                        class="explore-tab"
+                        type="button"
+                        data-category="technology"
+                    >
+                        Technology
+                    </button>
+
+                    <button
+                        class="explore-tab"
+                        type="button"
+                        data-category="business"
+                    >
+                        Business
+                    </button>
+
+                    <button
+                        class="explore-tab"
+                        type="button"
+                        data-category="creative"
+                    >
+                        Creative
+                    </button>
+                </nav>
+
+                <div
+                    class="reels-feed"
+                    id="reelsFeed"
+                    aria-live="polite"
+                >
+
+                    <article class="reel-card">
+                        <div
+                            class="reel-media reel-placeholder"
+                            role="img"
+                            aria-label="AI selected technology content"
+                        >
+                            <div class="reel-placeholder-content">
+                                <span class="reel-ai-badge">
+                                    AI PICK
+                                </span>
+
+                                <h2>
+                                    Interesting things you didn't know about AI
+                                </h2>
+
+                                <p>
+                                    AI-selected for your interests
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="reel-info">
+
+                            <div class="reel-creator">
+                                <div
+                                    class="reel-avatar"
+                                    aria-hidden="true"
+                                >
+                                    A
+                                </div>
+
+                                <div>
+                                    <strong>
+                                        AI Daily
+                                    </strong>
+
+                                    <span>
+                                        AI • Technology
+                                    </span>
+                                </div>
                             </div>
 
-                            <button class="primary-button course-submit" id="createCourseButton" type="submit">
-                                Create with AI
-                            </button>
+                            <p class="reel-description">
+                                Discover a few surprising ways artificial intelligence is changing everyday life.
+                            </p>
+
+                            <div class="reel-actions">
+                                <button
+                                    type="button"
+                                    aria-label="Like this reel"
+                                >
+                                    ♡
+                                    <span>Like</span>
+                                </button>
+
+                                <button
+                                    type="button"
+                                    aria-label="Comment on this reel"
+                                >
+                                    ◌
+                                    <span>Comment</span>
+                                </button>
+
+                                <button
+                                    type="button"
+                                    aria-label="Share this reel"
+                                >
+                                    ↗
+                                    <span>Share</span>
+                                </button>
+
+                                <button
+                                    class="reel-save"
+                                    type="button"
+                                    aria-label="Save this reel"
+                                >
+                                    ⌑
+                                </button>
+                            </div>
+
                         </div>
-                    </form>
+                    </article>
+
+                    <article class="reel-card">
+                        <div
+                            class="reel-media reel-placeholder reel-placeholder-two"
+                            role="img"
+                            aria-label="AI selected business content"
+                        >
+                            <div class="reel-placeholder-content">
+                                <span class="reel-ai-badge">
+                                    AI PICK
+                                </span>
+
+                                <h2>
+                                    How people are building businesses with AI
+                                </h2>
+
+                                <p>
+                                    Based on your interests
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="reel-info">
+
+                            <div class="reel-creator">
+                                <div
+                                    class="reel-avatar"
+                                    aria-hidden="true"
+                                >
+                                    B
+                                </div>
+
+                                <div>
+                                    <strong>
+                                        Build With AI
+                                    </strong>
+
+                                    <span>
+                                        Business • AI
+                                    </span>
+                                </div>
+                            </div>
+
+                            <p class="reel-description">
+                                Ideas, tools and strategies for building products with artificial intelligence.
+                            </p>
+
+                            <div class="reel-actions">
+                                <button
+                                    type="button"
+                                    aria-label="Like this reel"
+                                >
+                                    ♡
+                                    <span>Like</span>
+                                </button>
+
+                                <button
+                                    type="button"
+                                    aria-label="Comment on this reel"
+                                >
+                                    ◌
+                                    <span>Comment</span>
+                                </button>
+
+                                <button
+                                    type="button"
+                                    aria-label="Share this reel"
+                                >
+                                    ↗
+                                    <span>Share</span>
+                                </button>
+
+                                <button
+                                    class="reel-save"
+                                    type="button"
+                                    aria-label="Save this reel"
+                                >
+                                    ⌑
+                                </button>
+                            </div>
+
+                        </div>
+                    </article>
+
+                    <article class="reel-card">
+                        <div
+                            class="reel-media reel-placeholder reel-placeholder-three"
+                            role="img"
+                            aria-label="AI selected learning content"
+                        >
+                            <div class="reel-placeholder-content">
+                                <span class="reel-ai-badge">
+                                    AI PICK
+                                </span>
+
+                                <h2>
+                                    Learn something useful in 60 seconds
+                                </h2>
+
+                                <p>
+                                    Recommended for you
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="reel-info">
+
+                            <div class="reel-creator">
+                                <div
+                                    class="reel-avatar"
+                                    aria-hidden="true"
+                                >
+                                    L
+                                </div>
+
+                                <div>
+                                    <strong>
+                                        Learn Fast
+                                    </strong>
+
+                                    <span>
+                                        Learning • Science
+                                    </span>
+                                </div>
+                            </div>
+
+                            <p class="reel-description">
+                                Short educational content selected according to the topics you interact with.
+                            </p>
+
+                            <div class="reel-actions">
+                                <button
+                                    type="button"
+                                    aria-label="Like this reel"
+                                >
+                                    ♡
+                                    <span>Like</span>
+                                </button>
+
+                                <button
+                                    type="button"
+                                    aria-label="Comment on this reel"
+                                >
+                                    ◌
+                                    <span>Comment</span>
+                                </button>
+
+                                <button
+                                    type="button"
+                                    aria-label="Share this reel"
+                                >
+                                    ↗
+                                    <span>Share</span>
+                                </button>
+
+                                <button
+                                    class="reel-save"
+                                    type="button"
+                                    aria-label="Save this reel"
+                                >
+                                    ⌑
+                                </button>
+                            </div>
+
+                        </div>
+                    </article>
+
                 </div>
 
-                <div class="section-heading">
-                    <div>
-                        <h2>Your courses</h2>
-                        <p id="courseCountLabel">0 courses</p>
+                <aside
+                    class="ai-generation-coming"
+                    aria-label="Upcoming feature"
+                >
+                    <div
+                        class="ai-generation-icon"
+                        aria-hidden="true"
+                    >
+                        ✦
                     </div>
-                </div>
 
-                <div class="course-grid" id="coursesList"></div>
+                    <div>
+                        <strong>
+                            AI-generated reels are coming
+                        </strong>
+
+                        <p>
+                            Wor3do will eventually create original reels automatically for your interests.
+                        </p>
+                    </div>
+                </aside>
+
             </section>
 
-            <section class="page" id="page-settings" data-page-section="settings">
-                <header class="page-header">
+            <section
+                class="page"
+                id="coursesPage"
+                aria-labelledby="coursesPageTitle"
+            >
+                <div class="page-header">
+
                     <div>
-                        <div class="eyebrow">Preferences</div>
-                        <h1>Settings</h1>
-                        <p>Manage your profile, local memory, appearance, notifications, and privacy.</p>
+                        <div class="page-eyebrow">
+                            LEARNING
+                        </div>
+
+                        <h1 id="coursesPageTitle">
+                            Courses
+                        </h1>
+
+                        <p>
+                            Create complete courses with Wor3do AI.
+                        </p>
                     </div>
-                </header>
+
+                </div>
+
+                <div class="course-layout">
+
+                    <section
+                        class="course-creator-card"
+                        aria-labelledby="createCourseTitle"
+                    >
+                        <div
+                            class="course-card-icon"
+                            aria-hidden="true"
+                        >
+                            ✦
+                        </div>
+
+                        <h2 id="createCourseTitle">
+                            Create a course
+                        </h2>
+
+                        <p>
+                            Give Wor3do a topic and it will build a structured course.
+                        </p>
+
+                        <label for="courseTopic">
+                            What do you want to learn?
+                        </label>
+
+                        <textarea
+                            id="courseTopic"
+                            rows="4"
+                            maxlength="1000"
+                            placeholder="Example: Learn Python from beginner to advanced..."
+                        ></textarea>
+
+                        <label for="courseLevel">
+                            Level
+                        </label>
+
+                        <select
+                            id="courseLevel"
+                            aria-label="Course level"
+                        >
+                            <option value="beginner">
+                                Beginner
+                            </option>
+
+                            <option value="intermediate">
+                                Intermediate
+                            </option>
+
+                            <option value="advanced">
+                                Advanced
+                            </option>
+                        </select>
+
+                        <button
+                            id="createCourseButton"
+                            class="primary-button"
+                            type="button"
+                        >
+                            Create course
+                        </button>
+                    </section>
+
+                    <section
+                        class="courses-library-card"
+                        aria-labelledby="yourCoursesTitle"
+                    >
+                        <div class="courses-library-header">
+                            <div>
+                                <div class="page-eyebrow">
+                                    LIBRARY
+                                </div>
+
+                                <h2 id="yourCoursesTitle">
+                                    Your courses
+                                </h2>
+
+                                <p>
+                                    Courses created with Wor3do.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div
+                            id="coursesList"
+                            aria-live="polite"
+                        ></div>
+                    </section>
+
+                </div>
+            </section>
+
+            <section
+                class="page"
+                id="settingsPage"
+                aria-labelledby="settingsPageTitle"
+            >
+                <div class="page-header">
+
+                    <div>
+                        <div class="page-eyebrow">
+                            PREFERENCES
+                        </div>
+
+                        <h1 id="settingsPageTitle">
+                            Settings
+                        </h1>
+
+                        <p>
+                            Manage your Wor3do experience.
+                        </p>
+                    </div>
+
+                </div>
 
                 <div class="settings-layout">
-                    <div class="settings-menu" role="tablist" aria-label="Settings sections">
-                        <button class="settings-item active" type="button" data-settings-panel="profile">
-                            <span>👤</span>
+
+                    <nav
+                        class="settings-nav"
+                        aria-label="Settings sections"
+                    >
+                        <button
+                            class="settings-nav-item active"
+                            type="button"
+                            data-settings="profile"
+                            aria-current="page"
+                        >
                             Profile
                         </button>
 
-                        <button class="settings-item" type="button" data-settings-panel="notifications">
-                            <span>🔔</span>
+                        <button
+                            class="settings-nav-item"
+                            type="button"
+                            data-settings="notifications"
+                        >
                             Notifications
                         </button>
 
-                        <button class="settings-item" type="button" data-settings-panel="memory">
-                            <span>🧠</span>
+                        <button
+                            class="settings-nav-item"
+                            type="button"
+                            data-settings="memory"
+                        >
                             Memory
                         </button>
 
-                        <button class="settings-item" type="button" data-settings-panel="appearance">
-                            <span>🎨</span>
+                        <button
+                            class="settings-nav-item"
+                            type="button"
+                            data-settings="appearance"
+                        >
                             Appearance
                         </button>
 
-                        <button class="settings-item" type="button" data-settings-panel="privacy">
-                            <span>🔒</span>
+                        <button
+                            class="settings-nav-item"
+                            type="button"
+                            data-settings="privacy"
+                        >
                             Privacy
                         </button>
-                    </div>
+                    </nav>
 
                     <div class="settings-panel">
-                        <div class="settings-content active" data-settings-content="profile">
-                            <h2>Profile</h2>
 
-                            <p class="settings-description">
-                                Your local profile information used throughout Wor3do.
+                        <section
+                            class="settings-section"
+                            data-settings-panel="profile"
+                            aria-labelledby="profileSettingsTitle"
+                        >
+                            <div class="page-eyebrow">
+                                ACCOUNT
+                            </div>
+
+                            <h2 id="profileSettingsTitle">
+                                Profile
+                            </h2>
+
+                            <p>
+                                Your local Wor3do profile.
                             </p>
 
-                            <div class="profile-summary">
-                                <span class="avatar avatar-large" id="settingsAvatar">U</span>
+                            <div class="profile-settings-row">
 
-                                <div>
-                                    <strong id="settingsProfileName">Your profile</strong>
-                                    <p id="settingsProfileAbout">Add a little information about yourself.</p>
-                                </div>
-                            </div>
-
-                            <div class="setting-row">
-                                <div>
-                                    <strong>Display name</strong>
-                                    <p>Your name shown across the interface.</p>
-                                </div>
-
-                                <input
-                                    class="setting-input"
-                                    id="displayNameInput"
-                                    type="text"
-                                    maxlength="60"
-                                    placeholder="Your name"
+                                <div
+                                    class="avatar large"
+                                    id="settingsAvatar"
+                                    aria-hidden="true"
                                 >
-                            </div>
-
-                            <div class="setting-row">
-                                <div>
-                                    <strong>About you</strong>
-                                    <p>A short description for your local profile.</p>
+                                    W
                                 </div>
 
-                                <input
-                                    class="setting-input"
-                                    id="aboutInput"
-                                    type="text"
-                                    maxlength="160"
-                                    placeholder="Tell people about yourself"
-                                >
+                                <div>
+                                    <strong id="settingsProfileName">
+                                        Wor3do User
+                                    </strong>
+
+                                    <p>
+                                        Your profile information.
+                                    </p>
+                                </div>
+
                             </div>
 
-                            <button class="primary-button" id="saveProfileButton" type="button">
-                                Save changes
-                            </button>
-                        </div>
+                            <div class="settings-form">
 
-                        <div class="settings-content" data-settings-content="notifications">
-                            <h2>Notifications</h2>
+                                <div class="setting-field">
+                                    <label for="displayNameInput">
+                                        Display name
+                                    </label>
 
-                            <p class="settings-description">
-                                Choose which local confirmations Wor3do should show.
+                                    <input
+                                        id="displayNameInput"
+                                        type="text"
+                                        maxlength="60"
+                                        placeholder="Your name"
+                                        autocomplete="name"
+                                    >
+                                </div>
+
+                                <div class="setting-field">
+                                    <label for="aboutInput">
+                                        About you
+                                    </label>
+
+                                    <textarea
+                                        id="aboutInput"
+                                        rows="3"
+                                        maxlength="160"
+                                        placeholder="Tell people about yourself"
+                                    ></textarea>
+                                </div>
+
+                                <button
+                                    class="primary-button"
+                                    id="saveProfileButton"
+                                    type="button"
+                                >
+                                    Save changes
+                                </button>
+
+                            </div>
+                        </section>
+
+                        <section
+                            class="settings-section"
+                            data-settings-panel="notifications"
+                            aria-labelledby="notificationsSettingsTitle"
+                            hidden
+                        >
+                            <div class="page-eyebrow">
+                                ALERTS
+                            </div>
+
+                            <h2 id="notificationsSettingsTitle">
+                                Notifications
+                            </h2>
+
+                            <p>
+                                Control the notifications you receive from Wor3do.
                             </p>
 
-                            <div class="setting-row">
+                            <div class="settings-option">
                                 <div>
-                                    <strong>Course creation</strong>
-                                    <p>Show a confirmation after an AI course is created.</p>
+                                    <strong>
+                                        Course creation
+                                    </strong>
+
+                                    <span>
+                                        Notify you when a course is successfully generated.
+                                    </span>
                                 </div>
 
                                 <button
-                                    class="toggle"
+                                    class="setting-toggle"
                                     type="button"
-                                    data-toggle-key="courseNotifications"
-                                    aria-pressed="false"
+                                    data-setting="courseNotifications"
+                                    aria-pressed="true"
+                                    aria-label="Toggle course creation notifications"
                                 >
                                     <span></span>
                                 </button>
                             </div>
 
-                            <div class="setting-row">
+                            <div class="settings-option">
                                 <div>
-                                    <strong>Community activity</strong>
-                                    <p>Show a confirmation after creating community content.</p>
+                                    <strong>
+                                        Community activity
+                                    </strong>
+
+                                    <span>
+                                        Show confirmations for community activity.
+                                    </span>
                                 </div>
 
                                 <button
-                                    class="toggle"
+                                    class="setting-toggle"
                                     type="button"
-                                    data-toggle-key="communityNotifications"
-                                    aria-pressed="false"
+                                    data-setting="communityNotifications"
+                                    aria-pressed="true"
+                                    aria-label="Toggle community notifications"
                                 >
                                     <span></span>
                                 </button>
                             </div>
-                        </div>
+                        </section>
 
-                        <div class="settings-content" data-settings-content="memory">
-                            <h2>Memory</h2>
+                        <section
+                            class="settings-section"
+                            data-settings-panel="memory"
+                            aria-labelledby="memorySettingsTitle"
+                            hidden
+                        >
+                            <div class="page-eyebrow">
+                                STORAGE
+                            </div>
 
-                            <p class="settings-description">
-                                Control which information is saved locally in this browser.
+                            <h2 id="memorySettingsTitle">
+                                Memory
+                            </h2>
+
+                            <p>
+                                Manage information stored locally in this browser.
                             </p>
 
-                            <div class="setting-row">
+                            <div class="settings-option">
                                 <div>
-                                    <strong>Save chat history</strong>
-                                    <p>Keep your current conversation after closing or refreshing the page.</p>
+                                    <strong>
+                                        Save chat history
+                                    </strong>
+
+                                    <span>
+                                        Keep conversations available after refreshing the page.
+                                    </span>
                                 </div>
 
                                 <button
-                                    class="toggle"
+                                    class="setting-toggle"
                                     type="button"
-                                    data-toggle-key="saveChat"
-                                    aria-pressed="false"
+                                    data-setting="saveChat"
+                                    aria-pressed="true"
+                                    aria-label="Toggle chat history"
                                 >
                                     <span></span>
                                 </button>
                             </div>
 
-                            <div class="setting-row">
+                            <div class="settings-option">
                                 <div>
-                                    <strong>Save courses</strong>
-                                    <p>Keep generated courses in your browser's local course library.</p>
+                                    <strong>
+                                        Save courses
+                                    </strong>
+
+                                    <span>
+                                        Keep generated courses in your local course library.
+                                    </span>
                                 </div>
 
                                 <button
-                                    class="toggle"
+                                    class="setting-toggle"
                                     type="button"
-                                    data-toggle-key="saveCourses"
-                                    aria-pressed="false"
+                                    data-setting="saveCourses"
+                                    aria-pressed="true"
+                                    aria-label="Toggle course storage"
                                 >
                                     <span></span>
                                 </button>
                             </div>
 
-                            <button class="secondary-button danger-button" id="clearLocalDataButton" type="button">
+                            <button
+                                class="secondary-button danger-button"
+                                id="clearLocalDataButton"
+                                type="button"
+                            >
                                 Clear local data
                             </button>
-                        </div>
+                        </section>
 
-                        <div class="settings-content" data-settings-content="appearance">
-                            <h2>Appearance</h2>
+                        <section
+                            class="settings-section"
+                            data-settings-panel="appearance"
+                            aria-labelledby="appearanceSettingsTitle"
+                            hidden
+                        >
+                            <div class="page-eyebrow">
+                                DISPLAY
+                            </div>
 
-                            <p class="settings-description">
-                                Choose the visual theme for your Wor3do workspace.
+                            <h2 id="appearanceSettingsTitle">
+                                Appearance
+                            </h2>
+
+                            <p>
+                                Choose how Wor3do looks on this device.
                             </p>
 
-                            <div class="appearance-grid">
-                                <button class="theme-option active" type="button" data-theme="light">
-                                    <span class="theme-preview light-theme-preview"></span>
+                            <div class="appearance-options">
+
+                                <button
+                                    class="appearance-option active"
+                                    type="button"
+                                    data-theme="light"
+                                    aria-pressed="true"
+                                >
+                                    <span class="appearance-preview light-preview"></span>
 
                                     <span>
                                         <strong>Light</strong>
@@ -410,145 +1128,222 @@
                                     </span>
                                 </button>
 
-                                <button class="theme-option" type="button" data-theme="dark">
-                                    <span class="theme-preview dark-theme-preview"></span>
+                                <button
+                                    class="appearance-option"
+                                    type="button"
+                                    data-theme="dark"
+                                    aria-pressed="false"
+                                >
+                                    <span class="appearance-preview dark-preview"></span>
 
                                     <span>
                                         <strong>Dark</strong>
-                                        <small>Focused and low-light</small>
+                                        <small>Focused and comfortable</small>
                                     </span>
                                 </button>
+
                             </div>
-                        </div>
+                        </section>
 
-                        <div class="settings-content" data-settings-content="privacy">
-                            <h2>Privacy</h2>
+                        <section
+                            class="settings-section"
+                            data-settings-panel="privacy"
+                            aria-labelledby="privacySettingsTitle"
+                            hidden
+                        >
+                            <div class="page-eyebrow">
+                                SECURITY
+                            </div>
 
-                            <p class="settings-description">
-                                Important information about this frontend build.
+                            <h2 id="privacySettingsTitle">
+                                Privacy
+                            </h2>
+
+                            <p>
+                                Review how this version of Wor3do handles your information.
                             </p>
 
-                            <div class="info-card">
-                                <strong>Local-first storage</strong>
+                            <div class="privacy-card">
+                                <strong>
+                                    Local storage
+                                </strong>
 
                                 <p>
-                                    Profile settings, courses, and conversation history are stored locally
-                                    in this browser when the corresponding memory options are enabled.
+                                    Profile information, preferences, courses, and conversation history
+                                    may be stored locally in your browser.
                                 </p>
                             </div>
 
-                            <div class="info-card">
-                                <strong>AI requests</strong>
+                            <div class="privacy-card">
+                                <strong>
+                                    AI requests
+                                </strong>
 
                                 <p>
-                                    Chat and course requests are sent to the worker endpoint configured in script.js.
+                                    Messages and course-generation requests are sent to the AI worker
+                                    configured by the application.
                                 </p>
                             </div>
-                        </div>
+                        </section>
+
                     </div>
                 </div>
             </section>
+
         </main>
-    </div>
 
-    <div class="toast" id="toast" role="status" aria-live="polite"></div>
-
-    <div class="modal-backdrop" id="postModal" aria-hidden="true">
-        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="postModalTitle">
-            <div class="modal-header">
-                <div>
-                    <div class="eyebrow">Community</div>
-                    <h2 id="postModalTitle">Create a post</h2>
-                </div>
-
-                <button
-                    class="close-button"
-                    type="button"
-                    data-close-modal="postModal"
-                    aria-label="Close"
-                >
-                    ×
-                </button>
-            </div>
-
-            <form id="postForm" class="modal-form">
-                <label class="field-label" for="postTitle">Title</label>
-
-                <input
-                    id="postTitle"
-                    class="modal-input"
-                    type="text"
-                    maxlength="100"
-                    placeholder="Give your post a clear title"
-                    required
-                >
-
-                <label class="field-label" for="postBody">
-                    What do you want to share?
-                </label>
-
-                <textarea
-                    id="postBody"
-                    class="modal-textarea"
-                    rows="5"
-                    maxlength="700"
-                    placeholder="Share an idea, lesson, project, or creative thought..."
-                    required
-                ></textarea>
-
-                <label class="field-label" for="postCategory">Category</label>
-
-                <select id="postCategory" class="modal-input">
-                    <option value="learning">Learning</option>
-                    <option value="creative">Creative</option>
-                    <option value="popular">Popular</option>
-                </select>
-
-                <div class="modal-actions">
-                    <button
-                        class="secondary-button"
-                        type="button"
-                        data-close-modal="postModal"
-                    >
-                        Cancel
-                    </button>
-
-                    <button class="primary-button" type="submit">
-                        Publish post
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <div class="modal-backdrop" id="courseModal" aria-hidden="true">
         <div
-            class="modal course-modal"
+            class="toast"
+            id="toast"
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+        ></div>
+
+        <div
+            class="modal"
+            id="createPostModal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="createPostTitle"
+            aria-hidden="true"
+        >
+            <div
+                class="modal-backdrop"
+                data-modal-close="createPostModal"
+            ></div>
+
+            <div class="modal-card">
+
+                <div class="modal-header">
+
+                    <div>
+                        <div class="page-eyebrow">
+                            COMMUNITY
+                        </div>
+
+                        <h2 id="createPostTitle">
+                            Create post
+                        </h2>
+
+                        <p>
+                            Share something with the Wor3do community.
+                        </p>
+                    </div>
+
+                    <button
+                        class="modal-close"
+                        id="closeCreatePostModal"
+                        type="button"
+                        aria-label="Close create post dialog"
+                    >
+                        ×
+                    </button>
+
+                </div>
+
+                <form
+                    id="createPostForm"
+                    autocomplete="off"
+                >
+                    <label for="postText">
+                        Post
+                    </label>
+
+                    <textarea
+                        id="postText"
+                        rows="5"
+                        maxlength="1000"
+                        placeholder="What's on your mind?"
+                    ></textarea>
+
+                    <div class="modal-actions">
+
+                        <button
+                            type="button"
+                            class="secondary-button"
+                            data-modal-close="createPostModal"
+                        >
+                            Cancel
+                        </button>
+
+                        <button
+                            id="publishPostButton"
+                            class="primary-button"
+                            type="submit"
+                        >
+                            Publish
+                        </button>
+
+                    </div>
+                </form>
+
+            </div>
+        </div>
+
+        <div
+            class="modal"
+            id="courseModal"
             role="dialog"
             aria-modal="true"
             aria-labelledby="courseModalTitle"
+            aria-hidden="true"
         >
-            <div class="modal-header">
-                <div>
-                    <div class="eyebrow">Course overview</div>
-                    <h2 id="courseModalTitle">Course</h2>
-                    <p id="courseModalMeta" class="modal-meta"></p>
+            <div
+                class="modal-backdrop"
+                data-modal-close="courseModal"
+            ></div>
+
+            <div class="modal-card course-modal-card">
+
+                <div class="modal-header">
+
+                    <div>
+                        <div class="page-eyebrow">
+                            COURSE
+                        </div>
+
+                        <h2 id="courseModalTitle">
+                            Course
+                        </h2>
+                    </div>
+
+                    <button
+                        class="modal-close"
+                        id="closeCourseModal"
+                        type="button"
+                        aria-label="Close course dialog"
+                    >
+                        ×
+                    </button>
+
                 </div>
 
-                <button
-                    class="close-button"
-                    type="button"
-                    data-close-modal="courseModal"
-                    aria-label="Close"
-                >
-                    ×
-                </button>
-            </div>
+                <div
+                    id="courseModalContent"
+                    class="course-modal-content"
+                ></div>
 
-            <div class="course-content" id="courseModalContent"></div>
+            </div>
         </div>
+
     </div>
+
+    <style>
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+    </style>
 
     <script src="script.js"></script>
 </body>
 </html>
+```
