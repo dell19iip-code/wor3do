@@ -332,76 +332,62 @@ async function sendMessage() {
 
     const userMessage = {
         role: "user",
-        content:
-            text ||
-            "Please analyze this image."
+        content: text || "Please analyze this image."
     };
 
+    if (selectedImage) {
+        userMessage.image = selectedImage;
+    }
+
+    conversation.push(userMessage);
+
+    trimConversation();
+    saveConversation();
+
+    clearComposer();
+    renderConversation();
+
+    const loadingId = addLoadingMessage();
+
     try {
-        if (selectedImage) {
-            userMessage.image = selectedImage;
-        }
+        const messages = conversation
+            .slice(-30)
+            .map(message => ({
+                role: message.role,
+                content: message.content
+            }));
 
-        conversation.push(userMessage);
+        const requestBody = {
+            messages,
+            message: text || "Please analyze this image."
+        };
 
-        trimConversation();
-        saveConversation();
-
-        clearComposer();
-        renderConversation();
-
-        const loadingId =
-            addLoadingMessage();
-
-        const messages =
-            conversation
-                .slice(-30)
-                .map(message => ({
-                    role: message.role,
-                    content: message.content,
-                    ...(message.image
-                        ? {
-                              image:
-                                  message.image
-                          }
-                        : {})
-                }));
-
-        const response =
-            await fetchWithTimeout(
-                WORKER_URL,
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type":
-                            "application/json",
-                        "Accept":
-                            "application/json"
-                    },
-                    body: JSON.stringify({
-                        messages
-                    })
+        const response = await fetchWithTimeout(
+            WORKER_URL,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json"
                 },
-                60000
-            );
-
-        const data =
-            await parseResponse(response);
-
-        removeLoadingMessage(
-            loadingId
+                body: JSON.stringify(requestBody)
+            },
+            60000
         );
+
+        const data = await parseResponse(response);
+
+        removeLoadingMessage(loadingId);
 
         if (!response.ok) {
             throw new Error(
                 data?.error ||
                 data?.message ||
-                `AI request failed with status ${response.status}.`
+                AI request failed with status ${response.status}.
             );
         }
 
-        const output =
-            extractOutput(data);
+        const output = extractOutput(data);
 
         if (!output) {
             throw new Error(
@@ -416,21 +402,21 @@ async function sendMessage() {
 
         trimConversation();
         saveConversation();
-
         renderConversation();
+
     } catch (error) {
-        removeAllLoadingMessages();
+        removeLoadingMessage(loadingId);
 
         conversation.push({
             role: "assistant",
             content:
-                `I couldn't complete that request.\n\n${friendlyError(error)}`
+                I couldn't complete that request.\n\n${friendlyError(error)}
         });
 
         trimConversation();
         saveConversation();
-
         renderConversation();
+
     } finally {
         isSending = false;
         setChatLoading(false);
