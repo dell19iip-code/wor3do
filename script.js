@@ -59,7 +59,7 @@ const DEFAULT_POSTS = [
     },
     {
         id: "p4",
-        name: "Nora",
+        name: "Emma",
         avatar: "N",
         time: "1d ago",
         title: "A visual study system that actually works",
