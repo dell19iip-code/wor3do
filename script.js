@@ -2,12 +2,12 @@
 
 const WORKER_URL = "https://lingering-silence-36cd.dell19iip.workers.dev/";
 
-const STORAGE = {
-    conversation: "wor3do_conversation_v2",
-    courses: "wor3do_courses_v2",
-    profile: "wor3do_profile_v2",
-    settings: "wor3do_settings_v2",
-    posts: "wor3do_posts_v2"
+const STORAGE_KEYS = {
+    conversation: "wor3do_conversation_v4",
+    courses: "wor3do_courses_v4",
+    profile: "wor3do_profile_v4",
+    settings: "wor3do_settings_v4",
+    posts: "wor3do_posts_v4"
 };
 
 const DEFAULT_SETTINGS = {
@@ -25,7 +25,7 @@ const DEFAULT_PROFILE = {
 
 const DEFAULT_POSTS = [
     {
-        id: crypto.randomUUID(),
+        id: "p1",
         name: "Alex",
         avatar: "A",
         time: "2h ago",
@@ -36,7 +36,7 @@ const DEFAULT_POSTS = [
         comments: 18
     },
     {
-        id: crypto.randomUUID(),
+        id: "p2",
         name: "Maria",
         avatar: "M",
         time: "5h ago",
@@ -47,7 +47,7 @@ const DEFAULT_POSTS = [
         comments: 12
     },
     {
-        id: crypto.randomUUID(),
+        id: "p3",
         name: "James",
         avatar: "J",
         time: "1d ago",
@@ -58,7 +58,7 @@ const DEFAULT_POSTS = [
         comments: 31
     },
     {
-        id: crypto.randomUUID(),
+        id: "p4",
         name: "Nora",
         avatar: "N",
         time: "1d ago",
@@ -69,7 +69,7 @@ const DEFAULT_POSTS = [
         comments: 9
     },
     {
-        id: crypto.randomUUID(),
+        id: "p5",
         name: "Sam",
         avatar: "S",
         time: "2d ago",
@@ -80,7 +80,7 @@ const DEFAULT_POSTS = [
         comments: 24
     },
     {
-        id: crypto.randomUUID(),
+        id: "p6",
         name: "Lina",
         avatar: "L",
         time: "3d ago",
@@ -99,30 +99,41 @@ let profile = { ...DEFAULT_PROFILE };
 let settings = { ...DEFAULT_SETTINGS };
 let selectedImage = null;
 let isSending = false;
-let currentExploreCategory = "all";
+let currentCategory = "all";
+let toastTimer = null;
 
-document.addEventListener("DOMContentLoaded", init);
+window.addEventListener("DOMContentLoaded", init);
 
 function init() {
     loadState();
-    bindEvents();
+    bindNavigation();
+    bindComposer();
+    bindCourseCreator();
+    bindExplore();
+    bindSettings();
+    bindModals();
     applyTheme();
     updateProfileUI();
     renderConversation();
     renderCourses();
     renderPosts();
-    setupInput();
-    setupImageUpload();
 }
 
-function bindEvents() {
-    document.querySelectorAll("[data-page]").forEach(button => {
-        button.addEventListener("click", () => showPage(button.dataset.page));
-    });
+function bindNavigation() {
+    document.querySelectorAll("[data-page]").forEach(element => {
+        element.addEventListener("click", event => {
+            const page = element.dataset.page;
 
-    document.querySelector("[data-page-link='chat']")?.addEventListener("click", event => {
-        event.preventDefault();
-        showPage("chat");
+            if (!page) {
+                return;
+            }
+
+            if (element.tagName === "A") {
+                event.preventDefault();
+            }
+
+            showPage(page);
+        });
     });
 
     document.getElementById("newChatButton").addEventListener("click", newChat);
@@ -134,202 +145,222 @@ function bindEvents() {
         setSettingsPanel("profile");
     });
 
-    document.getElementById("openSidebarButton").addEventListener("click", toggleSidebar);
+    document.getElementById("openSidebarButton").addEventListener("click", openSidebar);
 
-    document.getElementById("mobileBackdrop").addEventListener("click", closeSidebar);
+    document.getElementById("mobileOverlay").addEventListener("click", closeSidebar);
+}
+
+function bindComposer() {
+    const input = document.getElementById("userInput");
+    const imageInput = document.getElementById("imageInput");
 
     document.getElementById("attachButton").addEventListener("click", () => {
-        document.getElementById("imageInput").click();
+        imageInput.click();
     });
 
     document.getElementById("sendButton").addEventListener("click", sendMessage);
-
-    document.getElementById("openCourseCreatorButton").addEventListener("click", openCourseCreator);
-
-    document.getElementById("closeCourseCreatorButton").addEventListener("click", closeCourseCreator);
-
-    document.getElementById("createCourseButton").addEventListener("click", createCourse);
-
-    document.getElementById("exploreTabs").addEventListener("click", event => {
-        const tab = event.target.closest("[data-category]");
-
-        if (!tab) {
-            return;
-        }
-
-        currentExploreCategory = tab.dataset.category;
-
-        document.querySelectorAll("#exploreTabs .tab").forEach(item => {
-            item.classList.toggle("active", item === tab);
-        });
-
-        renderPosts();
-    });
-
-    document.getElementById("createPostButton").addEventListener("click", createPost);
-
-    document.querySelectorAll(".settings-item").forEach(button => {
-        button.addEventListener("click", () => {
-            setSettingsPanel(button.dataset.settingsPanel);
-        });
-    });
-
-    document.querySelectorAll("[data-setting-toggle]").forEach(button => {
-        button.addEventListener("click", () => {
-            const key = button.dataset.settingToggle;
-
-            settings[key] = !settings[key];
-
-            saveSettings();
-            updateToggle(button, settings[key]);
-
-            if (key === "saveChat") {
-                persistConversation();
-            }
-
-            if (key === "saveCourses") {
-                saveCourses();
-            }
-        });
-    });
-
-    document.querySelectorAll("[data-theme-choice]").forEach(button => {
-        button.addEventListener("click", () => {
-            settings.theme = button.dataset.themeChoice;
-
-            saveSettings();
-            applyTheme();
-        });
-    });
-
-    document.getElementById("saveProfileButton").addEventListener("click", saveProfile);
-
-    document.getElementById("clearLocalDataButton").addEventListener("click", clearLocalData);
-
-    document.getElementById("closeCourseDetailButton").addEventListener("click", closeCourseDetail);
-
-    document.getElementById("courseDetailBackdrop").addEventListener("click", event => {
-        if (event.target === event.currentTarget) {
-            closeCourseDetail();
-        }
-    });
-
-    document.addEventListener("keydown", event => {
-        if (event.key === "Escape") {
-            closeSidebar();
-            closeCourseCreator();
-            closeCourseDetail();
-        }
-    });
-}
-
-function setupInput() {
-    const input = document.getElementById("userInput");
 
     input.addEventListener("input", () => {
         resizeTextarea(input);
     });
 
     input.addEventListener("keydown", event => {
-        if (event.key === "Enter" && !event.shiftKey) {
-            event.preventDefault();
+        if (event.key !== "Enter") {
+            return;
+        }
+
+        if (event.shiftKey) {
+            return;
+        }
+
+        event.preventDefault();
+
+        if (!isSending) {
             sendMessage();
         }
     });
+
+    imageInput.addEventListener("change", handleImageSelection);
 }
 
-function setupImageUpload() {
-    const input = document.getElementById("imageInput");
+function bindCourseCreator() {
+    document
+        .getElementById("openCourseCreatorButton")
+        .addEventListener("click", openCourseCreator);
 
-    input.addEventListener("change", event => {
-        const file = event.target.files?.[0];
+    document
+        .getElementById("closeCourseCreatorButton")
+        .addEventListener("click", closeCourseCreator);
 
-        if (!file) {
+    document
+        .getElementById("courseForm")
+        .addEventListener("submit", event => {
+            event.preventDefault();
+            createCourse();
+        });
+}
+
+function bindExplore() {
+    document
+        .getElementById("exploreTabs")
+        .addEventListener("click", event => {
+            const tab = event.target.closest("[data-category]");
+
+            if (!tab) {
+                return;
+            }
+
+            currentCategory = tab.dataset.category;
+
+            document
+                .querySelectorAll("#exploreTabs .tab")
+                .forEach(button => {
+                    button.classList.toggle(
+                        "active",
+                        button === tab
+                    );
+                });
+
+            renderPosts();
+        });
+
+    document
+        .getElementById("createPostButton")
+        .addEventListener("click", () => {
+            openModal("postModal");
+        });
+
+    document
+        .getElementById("postForm")
+        .addEventListener("submit", event => {
+            event.preventDefault();
+            publishPost();
+        });
+}
+
+function bindSettings() {
+    document
+        .querySelectorAll("[data-settings-panel]")
+        .forEach(button => {
+            button.addEventListener("click", () => {
+                setSettingsPanel(
+                    button.dataset.settingsPanel
+                );
+            });
+        });
+
+    document
+        .querySelectorAll("[data-toggle-key]")
+        .forEach(button => {
+            button.addEventListener("click", () => {
+                toggleSetting(
+                    button.dataset.toggleKey
+                );
+            });
+        });
+
+    document
+        .querySelectorAll("[data-theme]")
+        .forEach(button => {
+            button.addEventListener("click", () => {
+                settings.theme = button.dataset.theme;
+                saveSettings();
+                applyTheme();
+                showToast(
+                    `${capitalize(settings.theme)} theme enabled.`
+                );
+            });
+        });
+
+    document
+        .getElementById("saveProfileButton")
+        .addEventListener("click", saveProfile);
+
+    document
+        .getElementById("clearLocalDataButton")
+        .addEventListener("click", clearLocalData);
+}
+
+function bindModals() {
+    document
+        .querySelectorAll("[data-close-modal]")
+        .forEach(button => {
+            button.addEventListener("click", () => {
+                closeModal(button.dataset.closeModal);
+            });
+        });
+
+    document
+        .querySelectorAll(".modal-backdrop")
+        .forEach(backdrop => {
+            backdrop.addEventListener("click", event => {
+                if (event.target === backdrop) {
+                    closeModal(backdrop.id);
+                }
+            });
+        });
+
+    document.addEventListener("keydown", event => {
+        if (event.key !== "Escape") {
             return;
         }
 
-        const allowedTypes = [
-            "image/png",
-            "image/jpeg",
-            "image/webp",
-            "image/gif"
-        ];
+        closeSidebar();
 
-        if (!allowedTypes.includes(file.type)) {
-            showToast("Please choose a PNG, JPEG, WEBP, or GIF image.");
-            input.value = "";
-            return;
-        }
-
-        if (file.size > 10 * 1024 * 1024) {
-            showToast("Images must be 10 MB or smaller.");
-            input.value = "";
-            return;
-        }
-
-        selectedImage = file;
-        renderImagePreview(file);
+        document
+            .querySelectorAll(".modal-backdrop.visible")
+            .forEach(modal => {
+                closeModal(modal.id);
+            });
     });
 }
 
 function showPage(page) {
-    document.querySelectorAll(".page").forEach(section => {
-        section.classList.toggle(
-            "active-page",
-            section.dataset.pageSection === page
-        );
-    });
+    document
+        .querySelectorAll("[data-page-section]")
+        .forEach(section => {
+            section.classList.toggle(
+                "active",
+                section.dataset.pageSection === page
+            );
+        });
 
-    document.querySelectorAll(".nav-item[data-page]").forEach(item => {
-        item.classList.toggle(
-            "active",
-            item.dataset.page === page
-        );
-    });
+    document
+        .querySelectorAll(".nav-item[data-page]")
+        .forEach(button => {
+            button.classList.toggle(
+                "active",
+                button.dataset.page === page
+            );
+        });
 
     closeSidebar();
 
     if (page === "chat") {
-        document.getElementById("userInput").focus();
+        setTimeout(() => {
+            document.getElementById("userInput").focus();
+        }, 0);
     }
 }
 
-function setSettingsPanel(panel) {
-    document.querySelectorAll(".settings-item").forEach(button => {
-        button.classList.toggle(
-            "active",
-            button.dataset.settingsPanel === panel
-        );
-    });
+function openSidebar() {
+    document
+        .getElementById("sidebar")
+        .classList.add("open");
 
-    document.querySelectorAll(".settings-content").forEach(content => {
-        content.classList.toggle(
-            "active",
-            content.dataset.settingsContent === panel
-        );
-    });
-}
-
-function toggleSidebar() {
-    document.getElementById("sidebar").classList.toggle("mobile-open");
-    document.getElementById("mobileBackdrop").classList.toggle("visible");
+    document
+        .getElementById("mobileOverlay")
+        .classList.add("visible");
 }
 
 function closeSidebar() {
-    document.getElementById("sidebar").classList.remove("mobile-open");
-    document.getElementById("mobileBackdrop").classList.remove("visible");
-}
+    document
+        .getElementById("sidebar")
+        .classList.remove("open");
 
-function useSuggestion(text) {
-    showPage("chat");
-
-    const input = document.getElementById("userInput");
-
-    input.value = text;
-
-    resizeTextarea(input);
-
-    input.focus();
+    document
+        .getElementById("mobileOverlay")
+        .classList.remove("visible");
 }
 
 async function sendMessage() {
@@ -337,62 +368,66 @@ async function sendMessage() {
         return;
     }
 
-    const input = document.getElementById("userInput");
-    const text = input.value.trim();
+    const input =
+        document.getElementById("userInput");
+
+    const text =
+        input.value.trim();
 
     if (!text && !selectedImage) {
+        input.focus();
         return;
     }
 
     isSending = true;
 
-    setSendState(true);
+    setComposerLoading(true);
 
     const userMessage = {
         role: "user",
-        content: text || "Please analyze this image."
+        content:
+            text ||
+            "Please analyze this image."
     };
 
-    if (selectedImage) {
-        try {
-            userMessage.image = await fileToDataURL(selectedImage);
-        } catch {
-            isSending = false;
-            setSendState(false);
-            showToast("The image could not be processed.");
-            return;
-        }
-    }
-
-    conversation.push(userMessage);
-
-    persistConversation();
-
-    clearComposer();
-
-    renderConversation();
-
-    addTypingIndicator();
-
     try {
-        const response = await fetchWithTimeout(
-            WORKER_URL,
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Accept": "application/json"
-                },
-                body: JSON.stringify({
-                    messages: conversation.map(message => ({
-                        ...message
-                    }))
-                })
-            },
-            60000
-        );
+        if (selectedImage) {
+            userMessage.image =
+                await prepareImage(selectedImage);
+        }
 
-        const data = await safeJson(response);
+        conversation.push(userMessage);
+
+        trimConversation();
+        persistConversation();
+
+        clearComposer();
+        renderConversation();
+        addTypingIndicator();
+
+        const payload = {
+            messages:
+                conversation.map(message => ({
+                    ...message
+                }))
+        };
+
+        const response =
+            await fetchWithTimeout(
+                WORKER_URL,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Accept": "application/json"
+                    },
+                    body: JSON.stringify(payload)
+                },
+                60000
+            );
+
+        const data =
+            await parseResponse(response);
 
         if (!response.ok) {
             throw new Error(
@@ -402,10 +437,13 @@ async function sendMessage() {
             );
         }
 
-        const output = extractOutput(data);
+        const output =
+            extractOutput(data);
 
         if (!output) {
-            throw new Error("The AI returned an empty response.");
+            throw new Error(
+                "The AI returned an empty response."
+            );
         }
 
         conversation.push({
@@ -413,116 +451,56 @@ async function sendMessage() {
             content: output
         });
 
+        trimConversation();
         persistConversation();
-
         renderConversation();
     } catch (error) {
-        conversation.push({
-            role: "assistant",
-            content: `I couldn't complete that request.
-
-${friendlyError(error)}`
-        });
-
-        persistConversation();
-
-        renderConversation();
-    } finally {
         removeTypingIndicator();
 
+        const message =
+            friendlyError(error);
+
+        conversation.push({
+            role: "assistant",
+            content:
+                `I couldn't complete that request.\n\n${message}`
+        });
+
+        trimConversation();
+        persistConversation();
+        renderConversation();
+    } finally {
         isSending = false;
 
-        setSendState(false);
+        setComposerLoading(false);
 
-        document.getElementById("userInput").focus();
+        removeTypingIndicator();
+
+        input.focus();
     }
 }
 
-function clearComposer() {
-    const input = document.getElementById("userInput");
-    const fileInput = document.getElementById("imageInput");
-
-    input.value = "";
-    input.style.height = "48px";
-
-    selectedImage = null;
-
-    fileInput.value = "";
-
-    document.getElementById("imagePreviewContainer").innerHTML = "";
-}
-
-function setSendState(sending) {
-    const button = document.getElementById("sendButton");
-
-    button.disabled = sending;
-
-    button.innerHTML = sending
-        ? '<span class="spinner"></span>'
-        : "<span>↑</span>";
-}
-
-function resizeTextarea(input) {
-    input.style.height = "auto";
-
-    input.style.height = `${Math.min(
-        Math.max(input.scrollHeight, 48),
-        180
-    )}px`;
-}
-
-function renderImagePreview(file) {
-    const container = document.getElementById("imagePreviewContainer");
-
-    const url = URL.createObjectURL(file);
-
-    container.innerHTML = `
-        <div class="image-chip">
-            <img src="${url}" alt="Selected image preview">
-
-            <div>
-                <strong>${escapeHTML(file.name)}</strong>
-                <small>${formatBytes(file.size)}</small>
-            </div>
-
-            <button
-                type="button"
-                id="removeImageButton"
-                aria-label="Remove image"
-            >
-                ×
-            </button>
-        </div>
-    `;
-
-    document
-        .getElementById("removeImageButton")
-        .addEventListener("click", clearSelectedImage);
-}
-
-function clearSelectedImage() {
-    selectedImage = null;
-
-    document.getElementById("imageInput").value = "";
-
-    document.getElementById("imagePreviewContainer").innerHTML = "";
-}
-
 function renderConversation() {
-    const chatBox = document.getElementById("chatBox");
+    const chatBox =
+        document.getElementById("chatBox");
 
     if (!conversation.length) {
         chatBox.innerHTML = `
             <div class="welcome-card">
-                <div class="welcome-icon">W</div>
+                <span class="welcome-icon">W</span>
 
-                <div class="eyebrow">Your AI workspace</div>
+                <div class="eyebrow">
+                    Your AI workspace
+                </div>
 
-                <h2>What can I help you with?</h2>
+                <h2>
+                    What can I help you with?
+                </h2>
 
                 <p>
-                    Ask questions, learn something new, plan a project,
-                    write, analyze, or simply talk.
+                    Ask questions, learn something new,
+                    plan a project, write, analyze,
+                    or simply talk.
                 </p>
 
                 <div class="suggestions">
@@ -563,11 +541,26 @@ function renderConversation() {
             </div>
         `;
 
-        chatBox.querySelectorAll("[data-suggestion]").forEach(button => {
-            button.addEventListener("click", () => {
-                useSuggestion(button.dataset.suggestion);
+        chatBox
+            .querySelectorAll("[data-suggestion]")
+            .forEach(button => {
+                button.addEventListener(
+                    "click",
+                    () => {
+                        const input =
+                            document.getElementById(
+                                "userInput"
+                            );
+
+                        input.value =
+                            button.dataset.suggestion;
+
+                        resizeTextarea(input);
+
+                        input.focus();
+                    }
+                );
             });
-        });
 
         return;
     }
@@ -575,73 +568,127 @@ function renderConversation() {
     chatBox.innerHTML = "";
 
     conversation.forEach(message => {
-        const wrapper = document.createElement("div");
+        const wrapper =
+            document.createElement("article");
 
         wrapper.className =
-            `message ${message.role === "user" ? "user-message" : "ai-message"}`;
+            `message ${
+                message.role === "user"
+                    ? "user-message"
+                    : "ai-message"
+            }`;
 
-        const avatar = document.createElement("div");
+        const avatar =
+            document.createElement("div");
 
-        avatar.className = "message-avatar";
+        avatar.className =
+            "message-avatar";
 
         avatar.textContent =
-            message.role === "user" ? "U" : "W";
+            message.role === "user"
+                ? "U"
+                : "W";
 
-        const content = document.createElement("div");
+        const content =
+            document.createElement("div");
 
-        content.className = "message-content";
+        content.className =
+            "message-content";
 
-        const header = document.createElement("div");
+        const meta =
+            document.createElement("div");
 
-        header.className = "message-meta";
+        meta.className =
+            "message-meta";
 
-        header.innerHTML = `
-            <strong>${message.role === "user" ? "You" : "Wor3do"}</strong>
-            <span>${message.role === "user" ? "You" : "AI"}</span>
-        `;
+        meta.innerHTML =
+            `<strong>${
+                message.role === "user"
+                    ? "You"
+                    : "Wor3do"
+            }</strong><span>${
+                message.role === "user"
+                    ? "You"
+                    : "AI"
+            }</span>`;
 
-        const bubble = document.createElement("div");
+        const bubble =
+            document.createElement("div");
 
-        bubble.className = "message-bubble";
+        bubble.className =
+            "message-bubble";
 
-        bubble.textContent = message.content || "";
+        bubble.textContent =
+            message.content || "";
 
         if (message.image) {
-            const image = document.createElement("img");
+            const image =
+                document.createElement("img");
 
-            image.src = message.image;
-            image.className = "message-image";
-            image.alt = "Uploaded image";
+            image.className =
+                "message-image";
+
+            image.src =
+                message.image;
+
+            image.alt =
+                "Uploaded image";
+
+            image.loading =
+                "lazy";
 
             bubble.appendChild(image);
         }
 
-        content.appendChild(header);
+        content.appendChild(meta);
         content.appendChild(bubble);
 
-        if (message.role === "assistant") {
-            const actions = document.createElement("div");
+        if (
+            message.role ===
+            "assistant"
+        ) {
+            const actions =
+                document.createElement("div");
 
-            actions.className = "message-actions";
+            actions.className =
+                "message-actions";
 
-            const copyButton = document.createElement("button");
+            const copyButton =
+                document.createElement("button");
 
-            copyButton.type = "button";
-            copyButton.textContent = "Copy";
+            copyButton.type =
+                "button";
 
-            copyButton.addEventListener("click", async () => {
-                await copyText(message.content || "");
+            copyButton.textContent =
+                "Copy";
 
-                copyButton.textContent = "Copied";
+            copyButton.addEventListener(
+                "click",
+                async () => {
+                    const copied =
+                        await copyText(
+                            message.content || ""
+                        );
 
-                setTimeout(() => {
-                    copyButton.textContent = "Copy";
-                }, 1200);
-            });
+                    copyButton.textContent =
+                        copied
+                            ? "Copied"
+                            : "Copy failed";
 
-            actions.appendChild(copyButton);
+                    setTimeout(() => {
+                        copyButton.textContent =
+                            "Copy";
+                    }, 1400);
+                }
+            );
 
-            content.appendChild(actions);
+            actions.appendChild(
+                copyButton
+            );
+
+            content.appendChild(
+                actions
+            );
         }
 
         wrapper.appendChild(avatar);
@@ -651,23 +698,34 @@ function renderConversation() {
     });
 
     requestAnimationFrame(() => {
-        chatBox.scrollTop = chatBox.scrollHeight;
+        window.scrollTo({
+            top:
+                document.documentElement
+                    .scrollHeight,
+            behavior: "smooth"
+        });
     });
 }
 
 function addTypingIndicator() {
     removeTypingIndicator();
 
-    const chatBox = document.getElementById("chatBox");
+    const chatBox =
+        document.getElementById("chatBox");
 
-    const wrapper = document.createElement("div");
+    const wrapper =
+        document.createElement("article");
 
-    wrapper.id = "typingIndicator";
+    wrapper.id =
+        "typingIndicator";
 
-    wrapper.className = "message ai-message";
+    wrapper.className =
+        "message ai-message";
 
     wrapper.innerHTML = `
-        <div class="message-avatar">W</div>
+        <div class="message-avatar">
+            W
+        </div>
 
         <div class="message-content">
             <div class="message-meta">
@@ -676,9 +734,9 @@ function addTypingIndicator() {
             </div>
 
             <div class="message-bubble typing-bubble">
-                <span class="typing-dot"></span>
-                <span class="typing-dot"></span>
-                <span class="typing-dot"></span>
+                <span></span>
+                <span></span>
+                <span></span>
             </div>
         </div>
     `;
@@ -686,19 +744,26 @@ function addTypingIndicator() {
     chatBox.appendChild(wrapper);
 
     requestAnimationFrame(() => {
-        chatBox.scrollTop = chatBox.scrollHeight;
+        window.scrollTo({
+            top:
+                document.documentElement
+                    .scrollHeight,
+            behavior: "smooth"
+        });
     });
 }
 
 function removeTypingIndicator() {
-    document.getElementById("typingIndicator")?.remove();
+    document
+        .getElementById("typingIndicator")
+        ?.remove();
 }
 
 function newChat() {
     if (
         conversation.length &&
         !window.confirm(
-            "Start a new chat? Your current conversation will be replaced."
+            "Start a new chat? Your current conversation will be cleared."
         )
     ) {
         return;
@@ -706,98 +771,447 @@ function newChat() {
 
     conversation = [];
 
-    clearSelectedImage();
-
+    clearComposer();
     persistConversation();
 
     showPage("chat");
-
     renderConversation();
 
-    showToast("New chat started.");
+    showToast(
+        "New chat started."
+    );
+}
+
+function handleImageSelection(event) {
+    const file =
+        event.target.files?.[0];
+
+    if (!file) {
+        return;
+    }
+
+    const validTypes = [
+        "image/png",
+        "image/jpeg",
+        "image/webp",
+        "image/gif"
+    ];
+
+    if (!validTypes.includes(file.type)) {
+        showToast(
+            "Please choose a PNG, JPEG, WEBP, or GIF image."
+        );
+
+        event.target.value = "";
+
+        return;
+    }
+
+    if (
+        file.size >
+        10 * 1024 * 1024
+    ) {
+        showToast(
+            "Images must be 10 MB or smaller."
+        );
+
+        event.target.value = "";
+
+        return;
+    }
+
+    selectedImage = file;
+
+    renderImagePreview(file);
+}
+
+function renderImagePreview(file) {
+    const container =
+        document.getElementById(
+            "imagePreviewContainer"
+        );
+
+    const url =
+        URL.createObjectURL(file);
+
+    container.innerHTML = `
+        <div class="image-chip">
+            <img
+                src="${url}"
+                alt="Selected image preview"
+            >
+
+            <div>
+                <strong>
+                    ${escapeHTML(file.name)}
+                </strong>
+
+                <small>
+                    ${formatBytes(file.size)}
+                </small>
+            </div>
+
+            <button
+                type="button"
+                id="removeImageButton"
+                aria-label="Remove image"
+            >
+                ×
+            </button>
+        </div>
+    `;
+
+    document
+        .getElementById("removeImageButton")
+        .addEventListener(
+            "click",
+            clearSelectedImage
+        );
+}
+
+function clearSelectedImage() {
+    selectedImage = null;
+
+    document.getElementById(
+        "imageInput"
+    ).value = "";
+
+    document.getElementById(
+        "imagePreviewContainer"
+    ).innerHTML = "";
+}
+
+function clearComposer() {
+    const input =
+        document.getElementById(
+            "userInput"
+        );
+
+    input.value = "";
+
+    input.style.height =
+        "48px";
+
+    clearSelectedImage();
+}
+
+function resizeTextarea(input) {
+    input.style.height =
+        "auto";
+
+    input.style.height =
+        `${Math.min(
+            Math.max(
+                input.scrollHeight,
+                48
+            ),
+            180
+        )}px`;
+}
+
+function setComposerLoading(loading) {
+    const button =
+        document.getElementById(
+            "sendButton"
+        );
+
+    const input =
+        document.getElementById(
+            "userInput"
+        );
+
+    const attach =
+        document.getElementById(
+            "attachButton"
+        );
+
+    button.disabled =
+        loading;
+
+    attach.disabled =
+        loading;
+
+    button.classList.toggle(
+        "loading",
+        loading
+    );
+
+    input.disabled =
+        loading;
+}
+
+async function prepareImage(file) {
+    const dataUrl =
+        await fileToDataURL(file);
+
+    if (
+        !dataUrl.startsWith(
+            "data:image/"
+        )
+    ) {
+        throw new Error(
+            "Invalid image data."
+        );
+    }
+
+    try {
+        const image =
+            await loadImage(dataUrl);
+
+        const maxDimension =
+            1280;
+
+        const scale =
+            Math.min(
+                1,
+                maxDimension /
+                    Math.max(
+                        image.width,
+                        image.height
+                    )
+            );
+
+        const canvas =
+            document.createElement(
+                "canvas"
+            );
+
+        canvas.width =
+            Math.max(
+                1,
+                Math.round(
+                    image.width *
+                        scale
+                )
+            );
+
+        canvas.height =
+            Math.max(
+                1,
+                Math.round(
+                    image.height *
+                        scale
+                )
+            );
+
+        const context =
+            canvas.getContext(
+                "2d",
+                {
+                    alpha: false
+                }
+            );
+
+        context.drawImage(
+            image,
+            0,
+            0,
+            canvas.width,
+            canvas.height
+        );
+
+        return canvas.toDataURL(
+            "image/jpeg",
+            0.82
+        );
+    } catch {
+        return dataUrl;
+    }
+}
+
+function loadImage(dataUrl) {
+    return new Promise(
+        (resolve, reject) => {
+            const image =
+                new Image();
+
+            image.onload = () =>
+                resolve(image);
+
+            image.onerror = () =>
+                reject(
+                    new Error(
+                        "Image could not be loaded."
+                    )
+                );
+
+            image.src =
+                dataUrl;
+        }
+    );
 }
 
 function loadState() {
-    conversation = readStorage(
-        STORAGE.conversation,
-        []
-    );
-
-    courses = readStorage(
-        STORAGE.courses,
-        []
-    );
-
-    posts = readStorage(
-        STORAGE.posts,
-        []
-    );
+    settings = {
+        ...DEFAULT_SETTINGS,
+        ...readStorage(
+            STORAGE_KEYS.settings,
+            {}
+        )
+    };
 
     profile = {
         ...DEFAULT_PROFILE,
-        ...readStorage(STORAGE.profile, {})
+        ...readStorage(
+            STORAGE_KEYS.profile,
+            {}
+        )
     };
 
-    settings = {
-        ...DEFAULT_SETTINGS,
-        ...readStorage(STORAGE.settings, {})
-    };
+    const savedConversation =
+        readStorage(
+            STORAGE_KEYS.conversation,
+            []
+        );
 
-    if (!Array.isArray(conversation)) {
-        conversation = [];
-    }
+    const savedCourses =
+        readStorage(
+            STORAGE_KEYS.courses,
+            []
+        );
 
-    if (!Array.isArray(courses)) {
-        courses = [];
-    }
+    const savedPosts =
+        readStorage(
+            STORAGE_KEYS.posts,
+            []
+        );
 
-    if (!Array.isArray(posts) || !posts.length) {
-        posts = DEFAULT_POSTS;
-        savePosts();
-    }
+    conversation =
+        Array.isArray(
+            savedConversation
+        ) && settings.saveChat
+            ? savedConversation
+            : [];
 
-    if (!settings.saveChat) {
-        conversation = [];
-    }
+    courses =
+        Array.isArray(
+            savedCourses
+        )
+            ? savedCourses
+            : [];
+
+    posts =
+        Array.isArray(
+            savedPosts
+        ) && savedPosts.length
+            ? savedPosts
+            : clonePosts();
+
+    normalizeConversation();
+    normalizeCourses();
+    savePosts();
+}
+
+function normalizeConversation() {
+    conversation =
+        conversation
+            .filter(
+                item =>
+                    item &&
+                    (
+                        item.role ===
+                            "user" ||
+                        item.role ===
+                            "assistant"
+                    )
+            )
+            .map(item => ({
+                role:
+                    item.role,
+
+                content:
+                    String(
+                        item.content ||
+                        ""
+                    ),
+
+                ...(item.image
+                    ? {
+                          image:
+                              String(
+                                  item.image
+                              )
+                      }
+                    : {})
+            }))
+            .slice(-80);
+}
+
+function normalizeCourses() {
+    courses =
+        courses.filter(
+            course =>
+                course &&
+                course.id &&
+                course.content
+        );
 }
 
 function persistConversation() {
     if (!settings.saveChat) {
-        localStorage.removeItem(STORAGE.conversation);
+        localStorage.removeItem(
+            STORAGE_KEYS.conversation
+        );
+
         return;
     }
 
     try {
         localStorage.setItem(
-            STORAGE.conversation,
-            JSON.stringify(conversation)
+            STORAGE_KEYS.conversation,
+            JSON.stringify(
+                conversation.slice(-80)
+            )
         );
     } catch {
-        showToast("Chat could not be saved locally.");
+        const textOnly =
+            conversation.map(
+                ({ role, content }) => ({
+                    role,
+                    content
+                })
+            );
+
+        try {
+            localStorage.setItem(
+                STORAGE_KEYS.conversation,
+                JSON.stringify(textOnly)
+            );
+        } catch {}
     }
 }
 
 function saveCourses() {
     if (!settings.saveCourses) {
-        localStorage.removeItem(STORAGE.courses);
+        localStorage.removeItem(
+            STORAGE_KEYS.courses
+        );
+
         return;
     }
 
     try {
         localStorage.setItem(
-            STORAGE.courses,
+            STORAGE_KEYS.courses,
             JSON.stringify(courses)
         );
-    } catch {
-        showToast("Course library could not be saved locally.");
-    }
+    } catch {}
 }
 
 function savePosts() {
     try {
         localStorage.setItem(
-            STORAGE.posts,
+            STORAGE_KEYS.posts,
             JSON.stringify(posts)
+        );
+    } catch {}
+}
+
+function saveSettings() {
+    try {
+        localStorage.setItem(
+            STORAGE_KEYS.settings,
+            JSON.stringify(settings)
         );
     } catch {}
 }
@@ -805,28 +1219,19 @@ function savePosts() {
 function saveProfileState() {
     try {
         localStorage.setItem(
-            STORAGE.profile,
+            STORAGE_KEYS.profile,
             JSON.stringify(profile)
         );
-    } catch {
-        showToast("Profile could not be saved locally.");
-    }
+    } catch {}
 }
 
-function saveSettings() {
+function readStorage(
+    key,
+    fallback
+) {
     try {
-        localStorage.setItem(
-            STORAGE.settings,
-            JSON.stringify(settings)
-        );
-    } catch {
-        showToast("Settings could not be saved locally.");
-    }
-}
-
-function readStorage(key, fallback) {
-    try {
-        const value = localStorage.getItem(key);
+        const value =
+            localStorage.getItem(key);
 
         return value
             ? JSON.parse(value)
@@ -836,95 +1241,50 @@ function readStorage(key, fallback) {
     }
 }
 
-function updateProfileUI() {
-    const name =
-        profile.name.trim() || "Your profile";
-
-    const initials =
-        getInitials(profile.name) || "U";
-
-    document.getElementById("sidebarAvatar").textContent = initials;
-
-    document.getElementById("settingsAvatar").textContent = initials;
-
-    document.getElementById("sidebarProfileName").textContent = name;
-
-    document.getElementById("settingsProfileTitle").textContent = name;
-
-    document.getElementById("settingsProfileSubtitle").textContent =
-        profile.about.trim() ||
-        "Customize your profile below.";
-
-    document.getElementById("displayNameInput").value =
-        profile.name;
-
-    document.getElementById("aboutInput").value =
-        profile.about;
-}
-
-function saveProfile() {
-    profile = {
-        name: document.getElementById("displayNameInput").value.trim(),
-        about: document.getElementById("aboutInput").value.trim()
-    };
-
-    saveProfileState();
-
-    updateProfileUI();
-
-    showToast("Profile changes saved.");
-}
-
-function applyTheme() {
-    document.documentElement.dataset.theme =
-        settings.theme === "dark"
-            ? "dark"
-            : "light";
-
-    document.querySelectorAll("[data-theme-choice]").forEach(button => {
-        button.classList.toggle(
-            "active",
-            button.dataset.themeChoice === settings.theme
-        );
-    });
-
-    document.querySelectorAll("[data-setting-toggle]").forEach(button => {
-        const key = button.dataset.settingToggle;
-
-        updateToggle(
-            button,
-            !!settings[key]
-        );
-    });
-}
-
-function updateToggle(button, enabled) {
-    button.classList.toggle("active", enabled);
-
-    button.setAttribute(
-        "aria-pressed",
-        String(enabled)
-    );
+function trimConversation() {
+    if (
+        conversation.length >
+        80
+    ) {
+        conversation =
+            conversation.slice(-80);
+    }
 }
 
 function renderCourses() {
-    const list = document.getElementById("coursesList");
+    const list =
+        document.getElementById(
+            "coursesList"
+        );
 
-    const count = courses.length;
+    const count =
+        courses.length;
 
-    document.getElementById("courseCountLabel").textContent =
-        `${count} ${count === 1 ? "course" : "courses"}`;
+    document.getElementById(
+        "courseCountLabel"
+    ).textContent =
+        `${count} ${
+            count === 1
+                ? "course"
+                : "courses"
+        }`;
 
     if (!count) {
         list.innerHTML = `
             <div class="empty-state">
-                <div class="empty-icon">▣</div>
+                <div class="empty-icon">
+                    ▣
+                </div>
 
-                <h2>Your courses</h2>
+                <h2>
+                    Your courses
+                </h2>
 
                 <p>
-                    Courses you create will appear here.
-                    Start with a topic and let AI build the structure.
+                    Courses you create will
+                    appear here. Start with a
+                    topic and let AI build
+                    the structure.
                 </p>
 
                 <button
@@ -938,8 +1298,13 @@ function renderCourses() {
         `;
 
         document
-            .getElementById("emptyCreateCourseButton")
-            .addEventListener("click", openCourseCreator);
+            .getElementById(
+                "emptyCreateCourseButton"
+            )
+            .addEventListener(
+                "click",
+                openCourseCreator
+            );
 
         return;
     }
@@ -947,65 +1312,102 @@ function renderCourses() {
     list.innerHTML = "";
 
     courses.forEach(course => {
-        const card = document.createElement("article");
-
-        card.className = "course-card";
-
-        const title = document.createElement("h3");
-
-        title.textContent =
-            course.title || course.topic;
-
-        const meta = document.createElement("div");
-
-        meta.className = "course-card-meta";
-
-        meta.innerHTML = `
-            <span>${escapeHTML(course.level)}</span>
-            <span>•</span>
-            <span>${formatDate(course.createdAt)}</span>
-        `;
-
-        const preview = document.createElement("p");
-
-        preview.textContent =
-            trimText(
-                course.content ||
-                "AI-generated course roadmap.",
-                180
+        const card =
+            document.createElement(
+                "article"
             );
 
-        const footer = document.createElement("div");
+        card.className =
+            "course-card";
 
-        footer.className = "course-card-footer";
+        const title =
+            document.createElement(
+                "h3"
+            );
 
-        const openButton = document.createElement("button");
+        title.textContent =
+            course.title ||
+            course.topic ||
+            "Untitled course";
+
+        const meta =
+            document.createElement(
+                "div"
+            );
+
+        meta.className =
+            "course-meta";
+
+        meta.textContent =
+            `${
+                course.level ||
+                "Beginner"
+            } · ${formatDate(
+                course.createdAt
+            )}`;
+
+        const description =
+            document.createElement(
+                "p"
+            );
+
+        description.textContent =
+            trimText(
+                course.content,
+                190
+            );
+
+        const footer =
+            document.createElement(
+                "div"
+            );
+
+        footer.className =
+            "course-footer";
+
+        const openButton =
+            document.createElement(
+                "button"
+            );
 
         openButton.className =
             "secondary-button small";
 
-        openButton.type = "button";
+        openButton.type =
+            "button";
 
         openButton.textContent =
             "Open course";
 
-        openButton.addEventListener("click", () => {
-            openCourseDetail(course);
-        });
+        openButton.addEventListener(
+            "click",
+            () =>
+                openCourseModal(
+                    course
+                )
+        );
 
-        const deleteButton = document.createElement("button");
+        const deleteButton =
+            document.createElement(
+                "button"
+            );
 
         deleteButton.className =
             "text-button danger-text";
 
-        deleteButton.type = "button";
+        deleteButton.type =
+            "button";
 
         deleteButton.textContent =
             "Delete";
 
-        deleteButton.addEventListener("click", () => {
-            deleteCourse(course.id);
-        });
+        deleteButton.addEventListener(
+            "click",
+            () =>
+                deleteCourse(
+                    course.id
+                )
+        );
 
         footer.append(
             openButton,
@@ -1015,7 +1417,7 @@ function renderCourses() {
         card.append(
             title,
             meta,
-            preview,
+            description,
             footer
         );
 
@@ -1027,27 +1429,35 @@ function openCourseCreator() {
     showPage("courses");
 
     const creator =
-        document.getElementById("courseCreator");
+        document.getElementById(
+            "courseCreator"
+        );
 
-    creator.classList.add("open");
+    creator.classList.add(
+        "open"
+    );
 
     creator.setAttribute(
         "aria-hidden",
         "false"
     );
 
-    document.getElementById("courseTopic").focus();
+    document
+        .getElementById(
+            "courseTopic"
+        )
+        .focus();
 }
 
 function closeCourseCreator() {
     const creator =
-        document.getElementById("courseCreator");
+        document.getElementById(
+            "courseCreator"
+        );
 
-    if (!creator.classList.contains("open")) {
-        return;
-    }
-
-    creator.classList.remove("open");
+    creator.classList.remove(
+        "open"
+    );
 
     creator.setAttribute(
         "aria-hidden",
@@ -1057,13 +1467,19 @@ function closeCourseCreator() {
 
 async function createCourse() {
     const topicInput =
-        document.getElementById("courseTopic");
+        document.getElementById(
+            "courseTopic"
+        );
 
     const levelInput =
-        document.getElementById("courseLevel");
+        document.getElementById(
+            "courseLevel"
+        );
 
     const button =
-        document.getElementById("createCourseButton");
+        document.getElementById(
+            "createCourseButton"
+        );
 
     const topic =
         topicInput.value.trim();
@@ -1072,41 +1488,49 @@ async function createCourse() {
         levelInput.value;
 
     if (!topic) {
-        topicInput.focus();
-
         showToast(
             "Tell me what you want to learn first."
         );
 
+        topicInput.focus();
+
         return;
     }
 
-    button.disabled = true;
+    button.disabled =
+        true;
 
     button.textContent =
         "Creating…";
 
     try {
         const prompt =
-            `Create a complete ${level} course about "${topic}". Give the course a clear title and create 8 to 12 lessons. For every lesson, include a short description and the main topics to learn. End with a practical final project or assessment.`;
+            `Create a complete ${level} course about "${topic}". Give the course a clear title and create 8 to 12 lessons. For every lesson, include a short description and the main topics to learn. Include a practical final project or assessment at the end.`;
 
-        const response = await fetchWithTimeout(
-            WORKER_URL,
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Accept": "application/json"
+        const response =
+            await fetchWithTimeout(
+                WORKER_URL,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type":
+                            "application/json",
+                        "Accept":
+                            "application/json"
+                    },
+                    body:
+                        JSON.stringify({
+                            message:
+                                prompt
+                        })
                 },
-                body: JSON.stringify({
-                    message: prompt
-                })
-            },
-            60000
-        );
+                60000
+            );
 
         const data =
-            await safeJson(response);
+            await parseResponse(
+                response
+            );
 
         if (!response.ok) {
             throw new Error(
@@ -1126,28 +1550,30 @@ async function createCourse() {
         }
 
         const course = {
-            id: crypto.randomUUID(),
+            id: uid(),
             topic,
             level,
-            title: extractCourseTitle(
-                content,
-                topic
-            ),
+            title:
+                extractTitle(
+                    content,
+                    topic
+                ),
             content,
-            createdAt: Date.now()
+            createdAt:
+                Date.now()
         };
 
         courses.unshift(course);
 
         saveCourses();
-
         renderCourses();
-
         closeCourseCreator();
 
         topicInput.value = "";
 
-        if (settings.courseNotifications) {
+        if (
+            settings.courseNotifications
+        ) {
             showToast(
                 "Course created successfully."
             );
@@ -1157,35 +1583,51 @@ async function createCourse() {
             friendlyError(error)
         );
     } finally {
-        button.disabled = false;
+        button.disabled =
+            false;
 
         button.textContent =
             "Create with AI";
     }
 }
 
-function extractCourseTitle(content, fallback) {
+function extractTitle(
+    content,
+    fallback
+) {
     const firstLine =
-        content
+        String(content)
             .split("\n")
-            .map(line => line.trim())
-            .find(Boolean) || "";
+            .map(line =>
+                line.trim()
+            )
+            .find(Boolean) ||
+        "";
 
     const cleaned =
         firstLine
-            .replace(/^#+\s*/, "")
-            .replace(/^title\s*:\s*/i, "")
+            .replace(
+                /^#+\s*/,
+                ""
+            )
+            .replace(
+                /^title\s*:\s*/i,
+                ""
+            )
             .trim();
 
-    return cleaned.length > 3 &&
-        cleaned.length < 120
+    return cleaned.length >= 4 &&
+        cleaned.length <= 120
         ? cleaned
         : fallback;
 }
 
 function deleteCourse(id) {
     const course =
-        courses.find(item => item.id === id);
+        courses.find(
+            item =>
+                item.id === id
+        );
 
     if (!course) {
         return;
@@ -1201,83 +1643,68 @@ function deleteCourse(id) {
 
     courses =
         courses.filter(
-            item => item.id !== id
+            item =>
+                item.id !== id
         );
 
     saveCourses();
-
     renderCourses();
 
-    showToast("Course deleted.");
+    showToast(
+        "Course deleted."
+    );
 }
 
-function openCourseDetail(course) {
+function openCourseModal(course) {
     document.getElementById(
-        "courseDetailTitle"
+        "courseModalTitle"
     ).textContent =
         course.title ||
         course.topic;
 
     document.getElementById(
-        "courseDetailMeta"
+        "courseModalMeta"
     ).textContent =
-        `${course.level} · Created ${formatDate(course.createdAt)}`;
+        `${course.level} · Created ${formatDate(
+            course.createdAt
+        )}`;
 
-    const content =
-        document.getElementById(
-            "courseDetailContent"
-        );
-
-    content.textContent =
+    document.getElementById(
+        "courseModalContent"
+    ).textContent =
         course.content ||
         "No course content available.";
 
-    const backdrop =
-        document.getElementById(
-            "courseDetailBackdrop"
-        );
-
-    backdrop.classList.add("visible");
-
-    backdrop.setAttribute(
-        "aria-hidden",
-        "false"
-    );
-}
-
-function closeCourseDetail() {
-    const backdrop =
-        document.getElementById(
-            "courseDetailBackdrop"
-        );
-
-    backdrop.classList.remove("visible");
-
-    backdrop.setAttribute(
-        "aria-hidden",
-        "true"
+    openModal(
+        "courseModal"
     );
 }
 
 function renderPosts() {
     const grid =
-        document.getElementById("postGrid");
+        document.getElementById(
+            "postGrid"
+        );
 
     const filtered =
-        currentExploreCategory === "all"
+        currentCategory === "all"
             ? posts
             : posts.filter(
-                post =>
-                    post.category ===
-                    currentExploreCategory
-            );
+                  post =>
+                      post.category ===
+                      currentCategory
+              );
 
     if (!filtered.length) {
         grid.innerHTML = `
             <div class="empty-state compact">
-                <h2>No posts yet</h2>
+                <h2>
+                    No posts here yet
+                </h2>
+
                 <p>
-                    Nothing is showing in this category right now.
+                    Nothing is showing in
+                    this category right now.
                 </p>
             </div>
         `;
@@ -1288,227 +1715,455 @@ function renderPosts() {
     grid.innerHTML = "";
 
     filtered.forEach(post => {
-        const article =
-            document.createElement("article");
+        const card =
+            document.createElement(
+                "article"
+            );
 
-        article.className =
+        card.className =
             "post-card";
 
-        const header =
-            document.createElement("div");
+        const user =
+            document.createElement(
+                "div"
+            );
 
-        header.className =
+        user.className =
             "post-user";
 
         const avatar =
-            document.createElement("div");
+            document.createElement(
+                "div"
+            );
 
         avatar.className =
             "post-avatar";
 
         avatar.textContent =
             post.avatar ||
-            getInitials(post.name) ||
+            getInitials(
+                post.name
+            ) ||
             "U";
 
-        const identity =
-            document.createElement("div");
+        const info =
+            document.createElement(
+                "div"
+            );
 
-        identity.innerHTML = `
-            <strong>${escapeHTML(post.name)}</strong>
-            <span>${escapeHTML(post.time)}</span>
-        `;
+        info.innerHTML =
+            `<strong>${escapeHTML(
+                post.name
+            )}</strong><span>${escapeHTML(
+                post.time
+            )}</span>`;
 
-        header.append(
+        user.append(
             avatar,
-            identity
+            info
         );
 
         const title =
-            document.createElement("h3");
+            document.createElement(
+                "h3"
+            );
 
         title.textContent =
             post.title;
 
         const body =
-            document.createElement("p");
+            document.createElement(
+                "p"
+            );
 
         body.textContent =
             post.body;
 
         const footer =
-            document.createElement("div");
+            document.createElement(
+                "div"
+            );
 
         footer.className =
             "post-footer";
 
-        const like =
-            document.createElement("button");
-
-        like.type = "button";
-
-        like.innerHTML =
-            `♡ ${Number(post.likes || 0)}`;
-
-        like.addEventListener("click", () => {
-            toggleLike(
-                post.id,
-                like
+        const likeButton =
+            document.createElement(
+                "button"
             );
-        });
 
-        const comments =
-            document.createElement("span");
+        likeButton.type =
+            "button";
 
-        comments.textContent =
-            `💬 ${Number(post.comments || 0)}`;
+        likeButton.textContent =
+            `♡ ${Number(
+                post.likes || 0
+            )}`;
 
-        const share =
-            document.createElement("button");
-
-        share.type = "button";
-
-        share.textContent =
-            "↗ Share";
-
-        share.addEventListener("click", () => {
-            sharePost(post);
-        });
-
-        footer.append(
-            like,
-            comments,
-            share
+        likeButton.addEventListener(
+            "click",
+            () =>
+                likePost(
+                    post.id,
+                    likeButton
+                )
         );
 
-        article.append(
-            header,
+        const commentCount =
+            document.createElement(
+                "span"
+            );
+
+        commentCount.textContent =
+            `💬 ${Number(
+                post.comments || 0
+            )}`;
+
+        const shareButton =
+            document.createElement(
+                "button"
+            );
+
+        shareButton.type =
+            "button";
+
+        shareButton.textContent =
+            "↗ Share";
+
+        shareButton.addEventListener(
+            "click",
+            () =>
+                sharePost(post)
+        );
+
+        footer.append(
+            likeButton,
+            commentCount,
+            shareButton
+        );
+
+        card.append(
+            user,
             title,
             body,
             footer
         );
 
-        grid.appendChild(article);
+        grid.appendChild(card);
     });
 }
 
-function toggleLike(id, button) {
+function likePost(
+    id,
+    button
+) {
     const post =
-        posts.find(item => item.id === id);
+        posts.find(
+            item =>
+                item.id === id
+        );
 
     if (!post) {
         return;
     }
 
     post.likes =
-        Number(post.likes || 0) + 1;
+        Number(
+            post.likes || 0
+        ) + 1;
 
-    button.innerHTML =
+    button.textContent =
         `♥ ${post.likes}`;
 
     savePosts();
 }
 
 async function sharePost(post) {
-    const shareText =
+    const text =
         `${post.title} — ${post.body}`;
 
     try {
         if (navigator.share) {
             await navigator.share({
                 title: post.title,
-                text: shareText
+                text
             });
         } else {
-            await copyText(shareText);
-            showToast("Post text copied.");
+            await copyText(text);
+
+            showToast(
+                "Post text copied."
+            );
         }
     } catch {}
 }
 
-function createPost() {
+function publishPost() {
     const title =
-        window.prompt("Post title");
-
-    if (!title?.trim()) {
-        return;
-    }
+        document.getElementById(
+            "postTitle"
+        ).value.trim();
 
     const body =
-        window.prompt("What do you want to share?");
+        document.getElementById(
+            "postBody"
+        ).value.trim();
 
-    if (!body?.trim()) {
+    const category =
+        document.getElementById(
+            "postCategory"
+        ).value;
+
+    if (!title || !body) {
+        showToast(
+            "Please complete the post before publishing."
+        );
+
         return;
     }
 
-    const category =
-        window
-            .prompt(
-                "Category: learning, creative, or popular",
-                "creative"
-            )
-            ?.trim()
-            .toLowerCase();
-
-    const safeCategory =
-        ["learning", "creative", "popular"].includes(category)
-            ? category
-            : "creative";
-
     posts.unshift({
-        id: crypto.randomUUID(),
+        id: uid(),
         name:
             profile.name.trim() ||
             "You",
         avatar:
-            getInitials(profile.name) ||
+            getInitials(
+                profile.name
+            ) ||
             "U",
-        time: "Just now",
-        title: title.trim(),
-        body: body.trim(),
-        category: safeCategory,
+        time:
+            "Just now",
+        title,
+        body,
+        category,
         likes: 0,
         comments: 0
     });
 
     savePosts();
-
-    currentExploreCategory =
-        "all";
+    renderPosts();
 
     document
-        .querySelectorAll("#exploreTabs .tab")
-        .forEach(item => {
-            item.classList.toggle(
+        .getElementById("postForm")
+        .reset();
+
+    closeModal(
+        "postModal"
+    );
+
+    if (
+        settings.communityNotifications
+    ) {
+        showToast(
+            "Post published."
+        );
+    }
+}
+
+function setSettingsPanel(
+    panel
+) {
+    document
+        .querySelectorAll(
+            "[data-settings-panel]"
+        )
+        .forEach(button => {
+            button.classList.toggle(
                 "active",
-                item.dataset.category === "all"
+                button.dataset.settingsPanel ===
+                    panel
             );
         });
 
-    renderPosts();
+    document
+        .querySelectorAll(
+            "[data-settings-content]"
+        )
+        .forEach(content => {
+            content.classList.toggle(
+                "active",
+                content.dataset.settingsContent ===
+                    panel
+            );
+        });
+}
+
+function toggleSetting(key) {
+    if (!(key in settings)) {
+        return;
+    }
+
+    settings[key] =
+        !settings[key];
+
+    if (
+        key === "saveChat" &&
+        !settings.saveChat
+    ) {
+        conversation = [];
+
+        localStorage.removeItem(
+            STORAGE_KEYS.conversation
+        );
+
+        renderConversation();
+    }
+
+    if (
+        key === "saveCourses" &&
+        !settings.saveCourses
+    ) {
+        localStorage.removeItem(
+            STORAGE_KEYS.courses
+        );
+    }
+
+    saveSettings();
+    saveCourses();
+    updateSettingsUI();
+}
+
+function updateSettingsUI() {
+    document
+        .querySelectorAll(
+            "[data-toggle-key]"
+        )
+        .forEach(button => {
+            const enabled =
+                !!settings[
+                    button.dataset
+                        .toggleKey
+                ];
+
+            button.classList.toggle(
+                "active",
+                enabled
+            );
+
+            button.setAttribute(
+                "aria-pressed",
+                String(enabled)
+            );
+        });
+
+    document
+        .querySelectorAll(
+            "[data-theme]"
+        )
+        .forEach(button => {
+            button.classList.toggle(
+                "active",
+                button.dataset.theme ===
+                    settings.theme
+            );
+        });
+}
+
+function applyTheme() {
+    document.documentElement.dataset.theme =
+        settings.theme === "dark"
+            ? "dark"
+            : "light";
+
+    updateSettingsUI();
+}
+
+function saveProfile() {
+    profile = {
+        name:
+            document
+                .getElementById(
+                    "displayNameInput"
+                )
+                .value.trim(),
+
+        about:
+            document
+                .getElementById(
+                    "aboutInput"
+                )
+                .value.trim()
+    };
+
+    saveProfileState();
+    updateProfileUI();
 
     showToast(
-        "Post added to Explore."
+        "Profile changes saved."
     );
 }
 
-async function clearLocalData() {
+function updateProfileUI() {
+    const name =
+        profile.name.trim() ||
+        "Your profile";
+
+    const initials =
+        getInitials(
+            profile.name
+        ) || "U";
+
+    const about =
+        profile.about.trim() ||
+        "Add a little information about yourself.";
+
+    document.getElementById(
+        "sidebarAvatar"
+    ).textContent =
+        initials;
+
+    document.getElementById(
+        "settingsAvatar"
+    ).textContent =
+        initials;
+
+    document.getElementById(
+        "sidebarProfileName"
+    ).textContent =
+        name;
+
+    document.getElementById(
+        "settingsProfileName"
+    ).textContent =
+        name;
+
+    document.getElementById(
+        "settingsProfileAbout"
+    ).textContent =
+        about;
+
+    document.getElementById(
+        "displayNameInput"
+    ).value =
+        profile.name;
+
+    document.getElementById(
+        "aboutInput"
+    ).value =
+        profile.about;
+}
+
+function clearLocalData() {
     if (
         !window.confirm(
-            "Clear local chat history, courses, profile, posts, and settings?"
+            "Clear local chat history, courses, posts, profile, and settings?"
         )
     ) {
         return;
     }
 
-    Object.values(STORAGE)
-        .forEach(key =>
-            localStorage.removeItem(key)
+    Object.values(
+        STORAGE_KEYS
+    ).forEach(key => {
+        localStorage.removeItem(
+            key
         );
+    });
 
     conversation = [];
-
     courses = [];
+    posts = clonePosts();
 
     profile = {
         ...DEFAULT_PROFILE
@@ -1518,18 +2173,17 @@ async function clearLocalData() {
         ...DEFAULT_SETTINGS
     };
 
-    posts = [
-        ...DEFAULT_POSTS
-    ];
+    currentCategory =
+        "all";
 
     savePosts();
+    saveSettings();
+    saveProfileState();
 
     renderConversation();
-
     renderCourses();
-
+    renderPosts();
     updateProfileUI();
-
     applyTheme();
 
     showToast(
@@ -1537,52 +2191,71 @@ async function clearLocalData() {
     );
 }
 
-async function copyText(text) {
-    try {
-        await navigator.clipboard.writeText(text);
-        return true;
-    } catch {
-        const area =
-            document.createElement("textarea");
+function openModal(id) {
+    const modal =
+        document.getElementById(id);
 
-        area.value = text;
-
-        area.style.position = "fixed";
-        area.style.opacity = "0";
-
-        document.body.appendChild(area);
-
-        area.select();
-
-        const copied =
-            document.execCommand("copy");
-
-        area.remove();
-
-        return copied;
+    if (!modal) {
+        return;
     }
+
+    modal.classList.add(
+        "visible"
+    );
+
+    modal.setAttribute(
+        "aria-hidden",
+        "false"
+    );
+
+    const firstField =
+        modal.querySelector(
+            "input, textarea, select"
+        );
+
+    setTimeout(() => {
+        firstField?.focus();
+    }, 0);
 }
 
-function fileToDataURL(file) {
-    return new Promise((resolve, reject) => {
-        const reader =
-            new FileReader();
+function closeModal(id) {
+    const modal =
+        document.getElementById(id);
 
-        reader.onload = () =>
-            resolve(reader.result);
+    if (!modal) {
+        return;
+    }
 
-        reader.onerror = () =>
-            reject(
-                new Error(
-                    "Image reading failed."
-                )
-            );
+    modal.classList.remove(
+        "visible"
+    );
 
-        reader.readAsDataURL(file);
-    });
+    modal.setAttribute(
+        "aria-hidden",
+        "true"
+    );
 }
 
-async function safeJson(response) {
+function extractOutput(data) {
+    if (
+        typeof data ===
+        "string"
+    ) {
+        return data.trim();
+    }
+
+    return String(
+        data?.output_text ||
+        data?.output ||
+        data?.message ||
+        data?.content ||
+        ""
+    ).trim();
+}
+
+async function parseResponse(
+    response
+) {
     const text =
         await response.text();
 
@@ -1599,46 +2272,106 @@ async function safeJson(response) {
     }
 }
 
-function extractOutput(data) {
-    if (typeof data === "string") {
-        return data.trim();
-    }
-
-    return String(
-        data?.output_text ||
-        data?.output ||
-        data?.message ||
-        data?.content ||
-        ""
-    ).trim();
-}
-
-async function fetchWithTimeout(url, options, timeout) {
+function fetchWithTimeout(
+    url,
+    options,
+    timeout
+) {
     const controller =
         new AbortController();
 
     const timer =
-        setTimeout(
-            () => controller.abort(),
+        window.setTimeout(
+            () =>
+                controller.abort(),
             timeout
         );
 
+    return fetch(
+        url,
+        {
+            ...options,
+            signal:
+                controller.signal
+        }
+    ).finally(() =>
+        window.clearTimeout(timer)
+    );
+}
+
+function fileToDataURL(file) {
+    return new Promise(
+        (resolve, reject) => {
+            const reader =
+                new FileReader();
+
+            reader.onload = () =>
+                resolve(
+                    reader.result
+                );
+
+            reader.onerror = () =>
+                reject(
+                    new Error(
+                        "Image reading failed."
+                    )
+                );
+
+            reader.readAsDataURL(
+                file
+            );
+        }
+    );
+}
+
+async function copyText(text) {
     try {
-        return await fetch(
-            url,
-            {
-                ...options,
-                signal: controller.signal
-            }
+        await navigator.clipboard.writeText(
+            text
         );
-    } finally {
-        clearTimeout(timer);
+
+        return true;
+    } catch {
+        const area =
+            document.createElement(
+                "textarea"
+            );
+
+        area.value =
+            text;
+
+        area.setAttribute(
+            "readonly",
+            ""
+        );
+
+        area.style.position =
+            "fixed";
+
+        area.style.opacity =
+            "0";
+
+        document.body.appendChild(
+            area
+        );
+
+        area.select();
+
+        const copied =
+            document.execCommand(
+                "copy"
+            );
+
+        area.remove();
+
+        return copied;
     }
 }
 
 function friendlyError(error) {
     if (
-        error?.name === "AbortError"
+        error?.name ===
+        "AbortError"
     ) {
         return "The request took too long. Please try again.";
     }
@@ -1659,34 +2392,45 @@ function friendlyError(error) {
 
 function showToast(message) {
     const toast =
-        document.getElementById("toast");
+        document.getElementById(
+            "toast"
+        );
 
     toast.textContent =
         message;
 
-    toast.classList.add("visible");
-
-    clearTimeout(
-        showToast.timer
+    toast.classList.add(
+        "visible"
     );
 
-    showToast.timer =
-        setTimeout(() => {
-            toast.classList.remove(
-                "visible"
-            );
-        }, 2800);
+    clearTimeout(
+        toastTimer
+    );
+
+    toastTimer =
+        window.setTimeout(
+            () => {
+                toast.classList.remove(
+                    "visible"
+                );
+            },
+            2800
+        );
 }
 
 function getInitials(name) {
-    return name
+    return String(
+        name || ""
+    )
         .trim()
         .split(/\s+/)
         .filter(Boolean)
         .slice(0, 2)
         .map(
             part =>
-                part[0].toUpperCase()
+                part
+                    .charAt(0)
+                    .toUpperCase()
         )
         .join("");
 }
@@ -1696,8 +2440,13 @@ function formatBytes(bytes) {
         return `${bytes} B`;
     }
 
-    if (bytes < 1024 * 1024) {
-        return `${(bytes / 1024).toFixed(1)} KB`;
+    if (
+        bytes <
+        1024 * 1024
+    ) {
+        return `${(
+            bytes / 1024
+        ).toFixed(1)} KB`;
     }
 
     return `${(
@@ -1723,22 +2472,70 @@ function formatDate(timestamp) {
     );
 }
 
-function trimText(text, length) {
+function trimText(
+    text,
+    length
+) {
     const value =
-        String(text || "")
-            .replace(/\s+/g, " ")
+        String(
+            text || ""
+        )
+            .replace(
+                /\s+/g,
+                " "
+            )
             .trim();
 
-    return value.length > length
-        ? `${value.slice(0, length - 1)}…`
+    return value.length >
+        length
+        ? `${value.slice(
+              0,
+              length - 1
+          )}…`
         : value;
 }
 
 function escapeHTML(value) {
     return String(value)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
+        .replaceAll(
+            "&",
+            "&amp;"
+        )
+        .replaceAll(
+            "<",
+            "&lt;"
+        )
+        .replaceAll(
+            ">",
+            "&gt;"
+        )
+        .replaceAll(
+            '"',
+            "&quot;"
+        )
+        .replaceAll(
+            "'",
+            "&#039;"
+        );
+}
+
+function uid() {
+    return `w_${Date.now()}_${Math.random()
+        .toString(36)
+        .slice(2, 10)}`;
+}
+
+function capitalize(value) {
+    return (
+        value.charAt(0).toUpperCase() +
+        value.slice(1)
+    );
+}
+
+function clonePosts() {
+    return DEFAULT_POSTS.map(
+        post => ({
+            ...post
+        })
+    );
 }
