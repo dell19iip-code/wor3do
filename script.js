@@ -1,64 +1,92 @@
 "use strict";
 
 const WORKER_URL = "https://lingering-silence-36cd.dell19iip.workers.dev/";
-const STORAGE_KEY = "wor3do_conversation_v3";
-const COURSES_KEY = "wor3do_courses_v1";
-const MAX_HISTORY = 100;
-const MAX_MESSAGE_LENGTH = 10000;
-const REQUEST_TIMEOUT = 120000;
+const STORAGE_KEY = "wor3do_conversation";
 
 let conversation = [];
-let courses = [];
-let isSending = false;
-let currentController = null;
-let lastFailedMessage = null;
 let selectedImage = null;
+let isSending = false;
 
 document.addEventListener("DOMContentLoaded", () => {
     loadConversation();
-    loadCourses();
     setupInput();
-    setupImageInput();
-    renderCourses();
-
-    if (conversation.length === 0) {
-        addMessage(
-            "Wor3do",
-            "Hi! I'm Wor3do. What would you like to create?",
-            "W"
-        );
-    } else {
-        renderConversation();
-    }
-
-    updateCharacterCount();
+    setupImageUpload();
+    renderConversation();
 });
 
 function setupInput() {
     const input = document.getElementById("userInput");
 
-    if (!input) {
-        return;
-    }
-
-    input.addEventListener("keydown", handleEnter);
-
     input.addEventListener("input", () => {
-        updateCharacterCount();
-        autoResizeInput();
+        input.style.height = "auto";
+        input.style.height = Math.min(input.scrollHeight, 160) + "px";
     });
 
-    input.focus();
+    input.addEventListener("keydown", event => {
+        if (event.key === "Enter" && !event.shiftKey) {
+            event.preventDefault();
+            sendMessage();
+        }
+    });
 }
 
-function setupImageInput() {
+function setupImageUpload() {
     const input = document.getElementById("imageInput");
 
-    if (!input) {
-        return;
+    input.addEventListener("change", event => {
+        const file = event.target.files[0];
+
+        if (!file) {
+            return;
+        }
+
+        selectedImage = file;
+
+        const container = document.getElementById("imagePreviewContainer");
+
+        const reader = new FileReader();
+
+        reader.onload = event => {
+            container.innerHTML = `
+                <img class="image-preview" src="${event.target.result}" alt="Selected image">
+            `;
+        };
+
+        reader.readAsDataURL(file);
+    });
+}
+
+function showPage(page) {
+    document.querySelectorAll(".page").forEach(element => {
+        element.classList.remove("active-page");
+    });
+
+    document.querySelectorAll(".nav-item").forEach(element => {
+        element.classList.remove("active");
+    });
+
+    const target = document.getElementById("page-" + page);
+
+    if (target) {
+        target.classList.add("active-page");
     }
 
-    input.addEventListener("change", imageSelected);
+    const nav = document.querySelector(`.nav-item[data-page="${page}"]`);
+
+    if (nav) {
+        nav.classList.add("active");
+    }
+}
+
+function useSuggestion(text) {
+    showPage("chat");
+
+    const input = document.getElementById("userInput");
+
+    input.value = text;
+    input.focus();
+
+    input.dispatchEvent(new Event("input"));
 }
 
 async function sendMessage() {
@@ -67,875 +95,346 @@ async function sendMessage() {
     }
 
     const input = document.getElementById("userInput");
+    const text = input.value.trim();
 
-    if (!input) {
-        return;
-    }
-
-    const message = input.value.trim();
-
-    if (!message && !selectedImage) {
-        return;
-    }
-
-    if (message.length > MAX_MESSAGE_LENGTH) {
-        showTemporaryError("Your message is too long.");
+    if (!text && !selectedImage) {
         return;
     }
 
     isSending = true;
-    lastFailedMessage = null;
-    setInputState(true);
 
-    const imageToSend = selectedImage;
-    const displayText = message || "Image attached";
+    const sendButton = document.getElementById("sendButton");
+    sendButton.disabled = true;
 
-    conversation.push({
+    const userMessage = {
         role: "user",
-        content: message || "[Image attached]",
-        timestamp: Date.now()
-    });
+        content: text || "Please analyze this image."
+    };
+
+    if (selectedImage) {
+        userMessage.image = await fileToDataURL(selectedImage);
+    }
+
+    conversation.push(userMessage);
 
     saveConversation();
-
-    addMessage(
-        "You",
-        displayText,
-        "Y",
-        { image: imageToSend }
-    );
+    renderConversation();
 
     input.value = "";
-    updateCharacterCount();
-    autoResizeInput();
-    clearSelectedImage();
-    showTyping();
+    input.style.height = "40px";
+
+    selectedImage = null;
+
+    document.getElementById("imageInput").value = "";
+    document.getElementById("imagePreviewContainer").innerHTML = "";
+
+    addTypingIndicator();
 
     try {
-        currentController = new AbortController();
-
-        const timeoutId = setTimeout(() => {
-            if (currentController) {
-                currentController.abort();
-            }
-        }, REQUEST_TIMEOUT);
-
-        const apiMessages = conversation
-            .map(item => ({
-                role: item.role,
-                content: item.content
-            }))
-            .slice(-30);
+        const messages = conversation.map(message => ({
+            role: message.role,
+            content: message.content
+        }));
 
         const response = await fetch(WORKER_URL, {
             method: "POST",
             headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json"
+                "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                messages: apiMessages
-            }),
-            signal: currentController.signal
+                messages: messages
+            })
         });
 
-        clearTimeout(timeoutId);
+        const data = await response.json();
 
-        const data = await parseResponse(response);
-
-        hideTyping();
+        removeTypingIndicator();
 
         if (!response.ok) {
-            throw new Error(
-                data?.error ||
-                `AI server returned HTTP ${response.status}.`
-            );
+            throw new Error(data.error || "The AI request failed.");
         }
 
-        const output = extractAIResponse(data);
+        const output = data.output_text || data.output || data.message;
 
         if (!output) {
-            throw new Error(
-                "The AI server returned an empty response."
-            );
+            throw new Error("The AI returned an empty response.");
         }
 
         conversation.push({
             role: "assistant",
-            content: output,
-            timestamp: Date.now()
+            content: output
         });
 
-        trimConversation();
         saveConversation();
-
-        addMessage(
-            "Wor3do",
-            output,
-            "W"
-        );
+        renderConversation();
 
     } catch (error) {
-        hideTyping();
+        removeTypingIndicator();
 
-        conversation.pop();
+        conversation.push({
+            role: "assistant",
+            content: "Sorry, I couldn't complete that request.\n\n" + error.message
+        });
+
         saveConversation();
-
-        if (error.name === "AbortError") {
-            addErrorMessage("The response was stopped.");
-        } else {
-            lastFailedMessage = {
-                message,
-                image: imageToSend
-            };
-
-            addErrorMessage(
-                getFriendlyError(error)
-            );
-        }
+        renderConversation();
 
     } finally {
-        currentController = null;
         isSending = false;
-        setInputState(false);
+        sendButton.disabled = false;
         input.focus();
-    }
-}
-
-async function parseResponse(response) {
-    const contentType =
-        response.headers.get("content-type") || "";
-
-    if (contentType.includes("application/json")) {
-        try {
-            return await response.json();
-        } catch {
-            throw new Error(
-                "The AI server returned invalid JSON."
-            );
-        }
-    }
-
-    const text = await response.text();
-
-    if (!text) {
-        return {};
-    }
-
-    try {
-        return JSON.parse(text);
-    } catch {
-        return {
-            output_text: text
-        };
-    }
-}
-
-function extractAIResponse(data) {
-    if (!data) {
-        return "";
-    }
-
-    if (typeof data.output_text === "string") {
-        return data.output_text.trim();
-    }
-
-    if (typeof data.output === "string") {
-        return data.output.trim();
-    }
-
-    if (typeof data.response === "string") {
-        return data.response.trim();
-    }
-
-    if (typeof data.message === "string") {
-        return data.message.trim();
-    }
-
-    return "";
-}
-
-function addMessage(name, text, letter, options = {}) {
-    const chatBox = document.getElementById("chatBox");
-
-    if (!chatBox) {
-        return;
-    }
-
-    const isUser = name === "You";
-
-    const message = document.createElement("div");
-    message.className = isUser
-        ? "message user-message"
-        : "message assistant-message";
-
-    const avatar = document.createElement("div");
-    avatar.className = isUser
-        ? "avatar user-avatar"
-        : "avatar wor3do-avatar";
-
-    avatar.textContent = letter;
-
-    const content = document.createElement("div");
-    content.className = "message-content";
-
-    const nameElement = document.createElement("strong");
-    nameElement.textContent = name;
-
-    content.appendChild(nameElement);
-
-    if (options.image?.data) {
-        const image = document.createElement("img");
-
-        image.src = options.image.data;
-        image.alt = options.image.name || "Uploaded image";
-
-        image.style.maxWidth = "280px";
-        image.style.borderRadius = "12px";
-        image.style.display = "block";
-        image.style.marginBottom = "10px";
-
-        content.appendChild(image);
-    }
-
-    const textElement = document.createElement("div");
-    textElement.className = "message-text";
-
-    if (isUser) {
-        textElement.textContent = text;
-    } else {
-        renderText(textElement, text);
-    }
-
-    content.appendChild(textElement);
-    message.appendChild(avatar);
-    message.appendChild(content);
-    chatBox.appendChild(message);
-
-    scrollToBottom();
-}
-
-function renderText(element, text) {
-    const escaped = escapeHTML(text);
-
-    element.innerHTML = escaped
-        .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-        .replace(/\n/g, "<br>");
-}
-
-function showTyping() {
-    const chatBox = document.getElementById("chatBox");
-
-    if (!chatBox || document.getElementById("typing")) {
-        return;
-    }
-
-    const typing = document.createElement("div");
-
-    typing.id = "typing";
-    typing.className = "message assistant-message";
-
-    typing.innerHTML = `
-        <div class="avatar wor3do-avatar">W</div>
-        <div class="message-content">
-            <strong>Wor3do</strong>
-            <div class="typing-dots">● ● ●</div>
-        </div>
-    `;
-
-    chatBox.appendChild(typing);
-    scrollToBottom();
-}
-
-function hideTyping() {
-    const typing = document.getElementById("typing");
-
-    if (typing) {
-        typing.remove();
-    }
-}
-
-function stopGeneration() {
-    if (currentController) {
-        currentController.abort();
-    }
-}
-
-function retryLastMessage() {
-    if (!lastFailedMessage || isSending) {
-        return;
-    }
-
-    const input = document.getElementById("userInput");
-
-    if (!input) {
-        return;
-    }
-
-    input.value = lastFailedMessage.message || "";
-
-    if (lastFailedMessage.image) {
-        selectedImage = lastFailedMessage.image;
-        showImageSelected();
-    }
-
-    lastFailedMessage = null;
-
-    updateCharacterCount();
-    autoResizeInput();
-
-    sendMessage();
-}
-
-function handleEnter(event) {
-    if (
-        event.key === "Enter" &&
-        !event.shiftKey &&
-        !event.isComposing
-    ) {
-        event.preventDefault();
-
-        if (!isSending) {
-            sendMessage();
-        }
-    }
-}
-
-function imageSelected(event) {
-    const input =
-        event?.target ||
-        document.getElementById("imageInput");
-
-    if (
-        !input ||
-        !input.files ||
-        input.files.length === 0
-    ) {
-        return;
-    }
-
-    const file = input.files[0];
-
-    if (!file.type.startsWith("image/")) {
-        showTemporaryError("Please select an image.");
-        input.value = "";
-        return;
-    }
-
-    if (file.size > 10 * 1024 * 1024) {
-        showTemporaryError(
-            "Image is too large. Maximum size is 10 MB."
-        );
-        input.value = "";
-        return;
-    }
-
-    const reader = new FileReader();
-
-    reader.onload = () => {
-        selectedImage = {
-            name: file.name,
-            type: file.type,
-            size: file.size,
-            data: reader.result
-        };
-
-        showImageSelected();
-    };
-
-    reader.readAsDataURL(file);
-}
-
-function showImageSelected() {
-    const preview =
-        document.getElementById("imagePreview");
-
-    if (!preview || !selectedImage) {
-        return;
-    }
-
-    preview.innerHTML = `
-        <div class="selected-image">
-            <img src="${selectedImage.data}" alt="Selected image">
-            <button type="button" onclick="clearSelectedImage()">×</button>
-        </div>
-    `;
-}
-
-function clearSelectedImage() {
-    selectedImage = null;
-
-    const input =
-        document.getElementById("imageInput");
-
-    if (input) {
-        input.value = "";
-    }
-
-    const preview =
-        document.getElementById("imagePreview");
-
-    if (preview) {
-        preview.innerHTML = "";
-    }
-}
-
-function newChat() {
-    if (isSending) {
-        stopGeneration();
-    }
-
-    conversation = [];
-    lastFailedMessage = null;
-
-    clearSelectedImage();
-
-    localStorage.removeItem(STORAGE_KEY);
-
-    const chatBox =
-        document.getElementById("chatBox");
-
-    if (chatBox) {
-        chatBox.innerHTML = "";
-    }
-
-    addMessage(
-        "Wor3do",
-        "Hi! I'm Wor3do. What would you like to create?",
-        "W"
-    );
-
-    const input =
-        document.getElementById("userInput");
-
-    if (input) {
-        input.value = "";
-        input.focus();
-    }
-
-    updateCharacterCount();
-}
-
-function saveConversation() {
-    try {
-        localStorage.setItem(
-            STORAGE_KEY,
-            JSON.stringify(
-                conversation.slice(-MAX_HISTORY)
-            )
-        );
-    } catch (error) {
-        console.warn(
-            "Could not save conversation.",
-            error
-        );
-    }
-}
-
-function loadConversation() {
-    try {
-        const saved =
-            localStorage.getItem(STORAGE_KEY);
-
-        if (!saved) {
-            conversation = [];
-            return;
-        }
-
-        const parsed = JSON.parse(saved);
-
-        if (!Array.isArray(parsed)) {
-            conversation = [];
-            return;
-        }
-
-        conversation = parsed.slice(-MAX_HISTORY);
-
-    } catch {
-        conversation = [];
     }
 }
 
 function renderConversation() {
-    const chatBox =
-        document.getElementById("chatBox");
+    const chatBox = document.getElementById("chatBox");
 
     if (!chatBox) {
         return;
     }
 
-    chatBox.innerHTML = "";
+    if (conversation.length === 0) {
+        chatBox.innerHTML = `
+            <div class="welcome-card">
 
-    conversation.forEach(message => {
-        if (message.role === "user") {
-            addMessage(
-                "You",
-                message.content,
-                "Y"
-            );
-        } else {
-            addMessage(
-                "Wor3do",
-                message.content,
-                "W"
-            );
-        }
-    });
-}
+                <div class="welcome-icon">W</div>
 
-function trimConversation() {
-    if (conversation.length > MAX_HISTORY) {
-        conversation =
-            conversation.slice(-MAX_HISTORY);
-    }
-}
+                <h2>What can I help you with?</h2>
 
-function loadCourses() {
-    try {
-        const saved =
-            localStorage.getItem(COURSES_KEY);
+                <p>
+                    Ask questions, learn something new, create ideas,
+                    write, analyze, or simply talk.
+                </p>
 
-        courses =
-            saved ? JSON.parse(saved) : [];
+                <div class="suggestions">
+                    <button onclick="useSuggestion('Explain quantum mechanics simply')">
+                        Explain something
+                    </button>
 
-        if (!Array.isArray(courses)) {
-            courses = [];
-        }
-    } catch {
-        courses = [];
-    }
-}
+                    <button onclick="useSuggestion('Help me learn a new skill')">
+                        Learn a skill
+                    </button>
 
-function saveCourses() {
-    localStorage.setItem(
-        COURSES_KEY,
-        JSON.stringify(courses)
-    );
-}
+                    <button onclick="useSuggestion('Give me some creative ideas')">
+                        Get ideas
+                    </button>
+                </div>
 
-function renderCourses() {
-    const container =
-        document.getElementById(
-            "coursesContainer"
-        );
-
-    const count =
-        document.getElementById(
-            "courseCount"
-        );
-
-    if (!container) {
-        return;
-    }
-
-    if (count) {
-        count.textContent = courses.length;
-    }
-
-    if (courses.length === 0) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <div class="empty-icon">📚</div>
-                <h2>No courses yet</h2>
-                <p>Ask Wor3do to create a complete course.</p>
-                <button class="primary-button" onclick="createCourse()">
-                    Create my first course
-                </button>
             </div>
         `;
 
         return;
     }
 
-    container.innerHTML =
-        courses.map(course => `
-            <div class="course-card">
-                <h3>${escapeHTML(course.name)}</h3>
-                <p>${escapeHTML(course.description)}</p>
-                <button
-                    class="primary-button"
-                    onclick="openCourse('${course.id}')"
-                >
-                    Open Course
-                </button>
+    chatBox.innerHTML = "";
+
+    conversation.forEach(message => {
+        const wrapper = document.createElement("div");
+
+        wrapper.className =
+            message.role === "user"
+                ? "message user"
+                : "message ai";
+
+        const avatar = document.createElement("div");
+        avatar.className = "message-avatar";
+        avatar.textContent =
+            message.role === "user" ? "U" : "W";
+
+        const bubble = document.createElement("div");
+        bubble.className = "message-bubble";
+
+        bubble.textContent = message.content;
+
+        if (message.image) {
+            const image = document.createElement("img");
+
+            image.src = message.image;
+            image.className = "image-preview";
+            image.alt = "Uploaded image";
+
+            bubble.appendChild(document.createElement("br"));
+            bubble.appendChild(image);
+        }
+
+        wrapper.appendChild(avatar);
+        wrapper.appendChild(bubble);
+
+        chatBox.appendChild(wrapper);
+    });
+
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+function addTypingIndicator() {
+    const chatBox = document.getElementById("chatBox");
+
+    const wrapper = document.createElement("div");
+
+    wrapper.className = "message ai";
+    wrapper.id = "typingIndicator";
+
+    wrapper.innerHTML = `
+        <div class="message-avatar">W</div>
+
+        <div class="message-bubble">
+            <div class="typing">
+                <span></span>
+                <span></span>
+                <span></span>
             </div>
-        `).join("");
-}
+        </div>
+    `;
 
-function createCourse() {
-    const name =
-        prompt("What should your course be called?");
+    chatBox.appendChild(wrapper);
 
-    if (!name || !name.trim()) {
-        return;
-    }
-
-    const description =
-        prompt("What should the course teach?");
-
-    const course = {
-        id: Date.now().toString(),
-        name: name.trim(),
-        description:
-            description?.trim() ||
-            "AI-generated course",
-        created: Date.now()
-    };
-
-    courses.push(course);
-
-    saveCourses();
-    renderCourses();
-    showPage("courses");
-}
-
-function openCourse(id) {
-    const course =
-        courses.find(item => item.id === id);
-
-    if (!course) {
-        return;
-    }
-
-    alert(
-        `Course: ${course.name}\n\nThe full AI course builder will be connected next.`
-    );
-}
-
-function showPage(page) {
-    document
-        .querySelectorAll(".page")
-        .forEach(section => {
-            section.classList.remove("active-page");
-        });
-
-    const target =
-        document.getElementById(`page-${page}`);
-
-    if (target) {
-        target.classList.add("active-page");
-    }
-
-    document
-        .querySelectorAll(".nav-item")
-        .forEach(button => {
-            button.classList.remove("active");
-
-            if (button.dataset.page === page) {
-                button.classList.add("active");
-            }
-        });
-
-    closeSidebar();
-}
-
-function showMemory() {
-    showPage("memory");
-}
-
-function showSettings() {
-    showPage("settings");
-}
-
-function toggleSidebar() {
-    const sidebar =
-        document.querySelector(".sidebar");
-
-    if (sidebar) {
-        sidebar.classList.toggle("open");
-    }
-}
-
-function closeSidebar() {
-    const sidebar =
-        document.querySelector(".sidebar");
-
-    if (sidebar) {
-        sidebar.classList.remove("open");
-    }
-}
-
-function quickPrompt(text) {
-    const input =
-        document.getElementById("userInput");
-
-    if (!input) {
-        return;
-    }
-
-    input.value = text;
-    input.focus();
-
-    updateCharacterCount();
-    autoResizeInput();
-}
-
-function googleLogin() {
-    alert(
-        "Google Sign-in will be connected in the next development step."
-    );
-}
-
-function clearAllData() {
-    const confirmed =
-        confirm(
-            "Delete your locally stored Wor3do data?"
-        );
-
-    if (!confirmed) {
-        return;
-    }
-
-    localStorage.removeItem(STORAGE_KEY);
-    localStorage.removeItem(COURSES_KEY);
-
-    conversation = [];
-    courses = [];
-
-    renderCourses();
-    newChat();
-}
-
-function setInputState(disabled) {
-    const input =
-        document.getElementById("userInput");
-
-    const send =
-        document.getElementById("sendButton");
-
-    const stop =
-        document.getElementById("stopButton");
-
-    if (input) {
-        input.disabled = disabled;
-    }
-
-    if (send) {
-        send.disabled = disabled;
-    }
-
-    if (stop) {
-        stop.hidden = !disabled;
-    }
-}
-
-function updateCharacterCount() {
-    const input =
-        document.getElementById("userInput");
-
-    const counter =
-        document.getElementById("charCount");
-
-    if (!input || !counter) {
-        return;
-    }
-
-    counter.textContent =
-        `${input.value.length.toLocaleString()} / ${MAX_MESSAGE_LENGTH.toLocaleString()}`;
-}
-
-function autoResizeInput() {
-    const input =
-        document.getElementById("userInput");
-
-    if (!input) {
-        return;
-    }
-
-    input.style.height = "auto";
-
-    input.style.height =
-        Math.min(input.scrollHeight, 180) + "px";
-}
-
-function scrollToBottom() {
     window.scrollTo({
         top: document.body.scrollHeight,
         behavior: "smooth"
     });
 }
 
-function addErrorMessage(text) {
-    const chatBox =
-        document.getElementById("chatBox");
+function removeTypingIndicator() {
+    const indicator = document.getElementById("typingIndicator");
 
-    if (!chatBox) {
+    if (indicator) {
+        indicator.remove();
+    }
+}
+
+function newChat() {
+    conversation = [];
+    selectedImage = null;
+
+    saveConversation();
+
+    document.getElementById("userInput").value = "";
+    document.getElementById("imagePreviewContainer").innerHTML = "";
+    document.getElementById("imageInput").value = "";
+
+    showPage("chat");
+    renderConversation();
+}
+
+function loadConversation() {
+    try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+
+        if (saved) {
+            conversation = JSON.parse(saved);
+
+            if (!Array.isArray(conversation)) {
+                conversation = [];
+            }
+        }
+    } catch {
+        conversation = [];
+    }
+}
+
+function saveConversation() {
+    localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify(conversation)
+    );
+}
+
+function fileToDataURL(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+
+        reader.readAsDataURL(file);
+    });
+}
+
+function openCourseCreator() {
+    document.getElementById("courseCreator").classList.add("open");
+}
+
+function closeCourseCreator() {
+    document.getElementById("courseCreator").classList.remove("open");
+}
+
+async function createCourse() {
+    const topic = document.getElementById("courseTopic").value.trim();
+    const level = document.getElementById("courseLevel").value;
+
+    if (!topic) {
         return;
     }
 
-    const message =
-        document.createElement("div");
+    const button = document.querySelector(
+        ".creator-options .primary-button"
+    );
 
-    message.className =
-        "message assistant-message";
+    button.disabled = true;
+    button.textContent = "Creating...";
 
-    message.innerHTML = `
-        <div class="avatar wor3do-avatar">W</div>
-        <div class="message-content">
-            <strong>Wor3do</strong>
-            <div class="message-text">
-                ${escapeHTML(text)}
-            </div>
-            <br>
-            <button
-                onclick="retryLastMessage()"
-                class="primary-button"
-            >
-                Retry
-            </button>
-        </div>
+    try {
+        const response = await fetch(WORKER_URL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                message:
+                    `Create a complete ${level} course about "${topic}". ` +
+                    `Give the course a title and create 8 to 12 lessons. ` +
+                    `For every lesson, give a short description and the main topics to learn.`
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || "Course creation failed.");
+        }
+
+        const courseText =
+            data.output_text ||
+            data.output ||
+            data.message;
+
+        addCourse(topic, level, courseText);
+
+        document.getElementById("courseTopic").value = "";
+        closeCourseCreator();
+
+    } catch (error) {
+        alert(error.message);
+    } finally {
+        button.disabled = false;
+        button.textContent = "Create with AI";
+    }
+}
+
+function addCourse(topic, level, content) {
+    const list = document.getElementById("coursesList");
+
+    const empty = list.querySelector(".empty-courses");
+
+    if (empty) {
+        empty.remove();
+    }
+
+    const card = document.createElement("article");
+
+    card.className = "course-card";
+
+    card.innerHTML = `
+        <h3>${escapeHTML(topic)}</h3>
+        <p>${escapeHTML(level)} level</p>
+        <div class="course-lessons">${escapeHTML(content)}</div>
     `;
 
-    chatBox.appendChild(message);
-
-    scrollToBottom();
+    list.prepend(card);
 }
 
-function showTemporaryError(text) {
-    alert(text);
+function escapeHTML(text) {
+    const div = document.createElement("div");
+    div.textContent = text;
+    return div.innerHTML;
 }
-
-function getFriendlyError(error) {
-    if (!error) {
-        return "Something went wrong.";
-    }
-
-    const message =
-        String(error.message || error);
-
-    if (message.includes("Failed to fetch")) {
-        return "I couldn't connect to the AI server.";
-    }
-
-    if (message.includes("HTTP 429")) {
-        return "Too many requests. Please wait a moment.";
-    }
-
-    return message;
-}
-
-function escapeHTML(value) {
-    return String(value)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-}
-
-window.sendMessage = sendMessage;
-window.newChat = newChat;
-window.stopGeneration = stopGeneration;
-window.handleEnter = handleEnter;
-window.imageSelected = imageSelected;
-window.clearSelectedImage = clearSelectedImage;
-window.retryLastMessage = retryLastMessage;
-window.showPage = showPage;
-window.showMemory = showMemory;
-window.showSettings = showSettings;
-window.toggleSidebar = toggleSidebar;
-window.quickPrompt = quickPrompt;
-window.googleLogin = googleLogin;
-window.createCourse = createCourse;
-window.openCourse = openCourse;
-window.clearAllData = clearAllData;
