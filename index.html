@@ -11,79 +11,100 @@
 
 <body>
 
-    <header class="header">
-        <div class="logo">wor3do</div>
+    <div class="app">
 
-        <button class="new-chat" onclick="newChat()">
-            + New Chat
-        </button>
-    </header>
+        <!-- Sidebar -->
+        <aside class="sidebar">
+
+            <div class="sidebar-top">
+                <div class="logo">wor3do</div>
+
+                <button class="new-chat" onclick="newChat()">
+                    + New Chat
+                </button>
+            </div>
+
+            <div class="chat-history" id="chatHistory">
+                <!-- Chat history will appear here later -->
+            </div>
+
+        </aside>
 
 
-    <main class="main">
+        <!-- Main Chat -->
+        <main class="main">
 
-        <section class="welcome">
-            <h1>What can I create for you?</h1>
+            <section class="welcome">
+                <h1>What can I create for you?</h1>
 
-            <p>
-                Chat with Wor3do, turn your ideas into short videos,
-                or upload an image to get started.
-            </p>
-        </section>
+                <p>
+                    Chat with Wor3do, turn your ideas into short videos,
+                    or upload an image to get started.
+                </p>
+            </section>
 
 
-        <section class="chat-box" id="chatBox">
+            <section class="chat-box" id="chatBox">
 
-            <div class="message wor3do-message">
-                <div class="avatar">W</div>
+                <div class="message wor3do-message">
+                    <div class="avatar">W</div>
 
-                <div class="message-content">
-                    <strong>Wor3do</strong>
-                    <p>
-                        Hi! I'm Wor3do. Tell me what you want to create.
-                    </p>
+                    <div class="message-content">
+                        <strong>Wor3do</strong>
+
+                        <p>
+                            Hi! I'm Wor3do. Tell me what you want to create.
+                        </p>
+                    </div>
                 </div>
-            </div>
 
-        </section>
+            </section>
 
 
-        <section class="input-area">
+            <section class="input-area">
 
-            <div class="input-container">
+                <div class="input-container">
 
-                <button class="upload-button" onclick="document.getElementById('imageInput').click()">
-                    +
-                </button>
+                    <button
+                        class="upload-button"
+                        onclick="document.getElementById('imageInput').click()"
+                    >
+                        +
+                    </button>
 
-                <input
-                    type="file"
-                    id="imageInput"
-                    accept="image/*"
-                    hidden
-                    onchange="imageSelected()"
-                >
+                    <input
+                        type="file"
+                        id="imageInput"
+                        accept="image/*"
+                        hidden
+                        onchange="imageSelected()"
+                    >
 
-                <textarea
-                    id="userInput"
-                    placeholder="Message Wor3do..."
-                    rows="1"
-                    onkeydown="handleEnter(event)"
-                ></textarea>
+                    <textarea
+                        id="userInput"
+                        placeholder="Message Wor3do..."
+                        rows="1"
+                        onkeydown="handleEnter(event)"
+                    ></textarea>
 
-                <button class="send-button" onclick="sendMessage()">
-                    ↑
-                </button>
+                    <button
+                        class="send-button"
+                        onclick="sendMessage()"
+                    >
+                        ↑
+                    </button>
 
-            </div>
+                </div>
 
-            <div class="hint">
-                Wor3do can help you create text, images and short videos.
-            </div>
+                <div class="hint">
+                    Wor3do can help you create text, images and short videos.
+                </div>
 
-        </section>
+            </section>
 
-    </main>
+        </main>
+
+    </div>
 
 
     <script src="script.js"></script>
