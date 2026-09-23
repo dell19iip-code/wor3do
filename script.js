@@ -169,10 +169,7 @@ function bindNavigation() {
         });
     });
 
-    $("#newChatButton")?.addEventListener(
-        "click",
-        newChat
-    );
+    $("#newChatButton")?.addEventListener("click", newChat);
 
     $("#mobileNewChatButton")?.addEventListener(
         "click",
@@ -211,23 +208,14 @@ function switchPage(page) {
     });
 
     $$(".nav-item").forEach(button => {
-        const active =
-            button.dataset.page === page;
+        const active = button.dataset.page === page;
 
-        button.classList.toggle(
-            "active",
-            active
-        );
+        button.classList.toggle("active", active);
 
         if (active) {
-            button.setAttribute(
-                "aria-current",
-                "page"
-            );
+            button.setAttribute("aria-current", "page");
         } else {
-            button.removeAttribute(
-                "aria-current"
-            );
+            button.removeAttribute("aria-current");
         }
     });
 
@@ -353,9 +341,16 @@ async function sendMessage() {
         const messages = conversation
             .slice(-30)
             .map(message => ({
-                role: message.role,
-                content: message.content
-            }));
+                role:
+                    message.role === "assistant"
+                        ? "assistant"
+                        : "user",
+                content:
+                    typeof message.content === "string"
+                        ? message.content
+                        : ""
+            }))
+            .filter(message => message.content.trim());
 
         const requestBody = {
             messages,
@@ -383,7 +378,7 @@ async function sendMessage() {
             throw new Error(
                 data?.error ||
                 data?.message ||
-                AI request failed with status ${response.status}.
+                `AI request failed with status ${response.status}.`
             );
         }
 
@@ -410,7 +405,7 @@ async function sendMessage() {
         conversation.push({
             role: "assistant",
             content:
-                I couldn't complete that request.\n\n${friendlyError(error)}
+                `I couldn't complete that request.\n\n${friendlyError(error)}`
         });
 
         trimConversation();
@@ -427,34 +422,49 @@ async function sendMessage() {
     }
 }
 
+function trimConversation() {
+    if (!Array.isArray(conversation)) {
+        conversation = [];
+        return;
+    }
+
+    conversation = conversation
+        .filter(message =>
+            message &&
+            (
+                message.role === "user" ||
+                message.role === "assistant"
+            ) &&
+            typeof message.content === "string"
+        )
+        .slice(-60);
+}
+
 function setChatLoading(loading) {
-    const sendButton =
-        $("#sendButton");
-
-    const attachButton =
-        $("#attachButton");
-
-    const input =
-        $("#userInput");
+    const sendButton = $("#sendButton");
+    const attachButton = $("#attachButton");
+    const input = $("#userInput");
 
     sendButton?.classList.toggle(
         "loading",
         loading
     );
 
-    sendButton &&
-        (sendButton.disabled = loading);
+    if (sendButton) {
+        sendButton.disabled = loading;
+    }
 
-    attachButton &&
-        (attachButton.disabled = loading);
+    if (attachButton) {
+        attachButton.disabled = loading;
+    }
 
-    input &&
-        (input.disabled = loading);
+    if (input) {
+        input.disabled = loading;
+    }
 }
 
 function renderConversation() {
-    const box =
-        $("#chatBox");
+    const box = $("#chatBox");
 
     if (!box) {
         return;
@@ -464,12 +474,9 @@ function renderConversation() {
 
     if (!conversation.length) {
         const welcome =
-            document.createElement(
-                "div"
-            );
+            document.createElement("div");
 
-        welcome.className =
-            "welcome-card";
+        welcome.className = "welcome-card";
 
         welcome.innerHTML = `
             <div class="welcome-icon">W</div>
@@ -526,8 +533,7 @@ function renderConversation() {
                 button.addEventListener(
                     "click",
                     () => {
-                        const input =
-                            $("#userInput");
+                        const input = $("#userInput");
 
                         if (!input) {
                             return;
@@ -550,9 +556,7 @@ function renderConversation() {
 
     conversation.forEach(message => {
         box.appendChild(
-            createMessageElement(
-                message
-            )
+            createMessageElement(message)
         );
     });
 
@@ -561,9 +565,7 @@ function renderConversation() {
 
 function createMessageElement(message) {
     const wrapper =
-        document.createElement(
-            "article"
-        );
+        document.createElement("article");
 
     wrapper.className =
         `message ${message.role}`;
@@ -571,29 +573,22 @@ function createMessageElement(message) {
     const avatar =
         document.createElement("div");
 
-    avatar.className =
-        "message-avatar";
+    avatar.className = "message-avatar";
 
     avatar.textContent =
         message.role === "user"
-            ? getInitials(
-                  profile.name
-              ) || "U"
+            ? getInitials(profile.name) || "U"
             : "W";
 
     const content =
         document.createElement("div");
 
-    content.className =
-        "message-content";
+    content.className = "message-content";
 
     const meta =
-        document.createElement(
-            "div"
-        );
+        document.createElement("div");
 
-    meta.className =
-        "message-meta";
+    meta.className = "message-meta";
 
     meta.innerHTML =
         `<strong>${
@@ -603,72 +598,40 @@ function createMessageElement(message) {
         }</strong>`;
 
     const bubble =
-        document.createElement(
-            "div"
-        );
+        document.createElement("div");
 
-    bubble.className =
-        "message-bubble";
+    bubble.className = "message-bubble";
 
     if (message.image) {
         const image =
-            document.createElement(
-                "img"
-            );
+            document.createElement("img");
 
-        image.className =
-            "message-image";
+        image.className = "message-image";
+        image.src = message.image;
+        image.alt = "Attached image";
+        image.loading = "lazy";
 
-        image.src =
-            message.image;
-
-        image.alt =
-            "Attached image";
-
-        image.loading =
-            "lazy";
-
-        bubble.appendChild(
-            image
-        );
+        bubble.appendChild(image);
     }
 
     const text =
-        document.createElement(
-            "div"
-        );
+        document.createElement("div");
 
-    text.textContent =
-        message.content || "";
+    text.textContent = message.content || "";
 
-    bubble.appendChild(
-        text
-    );
+    bubble.appendChild(text);
 
-    content.appendChild(
-        meta
-    );
+    content.appendChild(meta);
+    content.appendChild(bubble);
 
-    content.appendChild(
-        bubble
-    );
-
-    if (
-        message.role ===
-        "assistant"
-    ) {
+    if (message.role === "assistant") {
         const actions =
-            document.createElement(
-                "div"
-            );
+            document.createElement("div");
 
-        actions.className =
-            "message-actions";
+        actions.className = "message-actions";
 
         const copy =
-            document.createElement(
-                "button"
-            );
+            document.createElement("button");
 
         copy.type = "button";
         copy.textContent = "Copy";
@@ -678,8 +641,7 @@ function createMessageElement(message) {
             async () => {
                 const success =
                     await copyText(
-                        message.content ||
-                            ""
+                        message.content || ""
                     );
 
                 copy.textContent =
@@ -688,88 +650,55 @@ function createMessageElement(message) {
                         : "Failed";
 
                 setTimeout(() => {
-                    copy.textContent =
-                        "Copy";
+                    copy.textContent = "Copy";
                 }, 1200);
             }
         );
 
-        actions.appendChild(
-            copy
-        );
-
-        content.appendChild(
-            actions
-        );
+        actions.appendChild(copy);
+        content.appendChild(actions);
     }
 
-    wrapper.appendChild(
-        avatar
-    );
-
-    wrapper.appendChild(
-        content
-    );
+    wrapper.appendChild(avatar);
+    wrapper.appendChild(content);
 
     return wrapper;
 }
 
 function addLoadingMessage() {
-    const box =
-        $("#chatBox");
+    const box = $("#chatBox");
 
     if (!box) {
         return "";
     }
 
-    const id =
-        `loading-${Date.now()}`;
+    const id = `loading-${Date.now()}`;
 
     const wrapper =
-        document.createElement(
-            "article"
-        );
+        document.createElement("article");
 
-    wrapper.className =
-        "message assistant";
-
-    wrapper.id =
-        id;
+    wrapper.className = "message assistant";
+    wrapper.id = id;
 
     const avatar =
-        document.createElement(
-            "div"
-        );
+        document.createElement("div");
 
-    avatar.className =
-        "message-avatar";
-
-    avatar.textContent =
-        "W";
+    avatar.className = "message-avatar";
+    avatar.textContent = "W";
 
     const content =
-        document.createElement(
-            "div"
-        );
+        document.createElement("div");
 
-    content.className =
-        "message-content";
+    content.className = "message-content";
 
     const meta =
-        document.createElement(
-            "div"
-        );
+        document.createElement("div");
 
-    meta.className =
-        "message-meta";
-
-    meta.innerHTML =
-        "<strong>Wor3do</strong>";
+    meta.className = "message-meta";
+    meta.innerHTML = "<strong>Wor3do</strong>";
 
     const bubble =
-        document.createElement(
-            "div"
-        );
+        document.createElement("div");
 
     bubble.className =
         "message-bubble typing-bubble";
@@ -777,19 +706,10 @@ function addLoadingMessage() {
     bubble.innerHTML =
         "<span></span><span></span><span></span>";
 
-    content.append(
-        meta,
-        bubble
-    );
+    content.append(meta, bubble);
+    wrapper.append(avatar, content);
 
-    wrapper.append(
-        avatar,
-        content
-    );
-
-    box.appendChild(
-        wrapper
-    );
+    box.appendChild(wrapper);
 
     scrollChatToBottom();
 
@@ -808,45 +728,39 @@ function removeLoadingMessage(id) {
 
 function removeAllLoadingMessages() {
     document
-        .querySelectorAll(
-            '[id^="loading-"]'
-        )
-        .forEach(element =>
-            element.remove()
-        );
+        .querySelectorAll('[id^="loading-"]')
+        .forEach(element => element.remove());
 }
 
 function scrollChatToBottom() {
     requestAnimationFrame(() => {
+        const box = $("#chatBox");
+
+        if (box) {
+            box.scrollTop = box.scrollHeight;
+        }
+
         window.scrollTo({
-            top:
-                document.documentElement
-                    .scrollHeight,
+            top: document.documentElement.scrollHeight,
             behavior: "smooth"
         });
     });
 }
 
 function resizeInput(event) {
-    const input =
-        event.target;
+    const input = event.target;
 
-    input.style.height =
-        "auto";
+    input.style.height = "auto";
 
     input.style.height =
         `${Math.min(
-            Math.max(
-                input.scrollHeight,
-                44
-            ),
+            Math.max(input.scrollHeight, 44),
             160
         )}px`;
 }
 
 async function handleImageUpload(event) {
-    const file =
-        event.target.files?.[0];
+    const file = event.target.files?.[0];
 
     event.target.value = "";
 
@@ -860,18 +774,15 @@ async function handleImageUpload(event) {
 
         renderImagePreview();
 
-        showToast(
-            "Image attached."
-        );
+        showToast("Image attached.");
     } catch (error) {
-        selectedImage =
-            null;
+        selectedImage = null;
 
         renderImagePreview();
 
         showToast(
             error.message ||
-                "Could not attach image."
+            "Could not attach image."
         );
     }
 }
@@ -884,39 +795,25 @@ async function prepareImage(file) {
         "image/gif"
     ];
 
-    if (
-        !allowedTypes.includes(
-            file.type
-        )
-    ) {
+    if (!allowedTypes.includes(file.type)) {
         throw new Error(
             "Please use PNG, JPEG, WEBP, or GIF."
         );
     }
 
-    if (
-        file.size >
-        10 * 1024 * 1024
-    ) {
+    if (file.size > 10 * 1024 * 1024) {
         throw new Error(
             "The image must be smaller than 10 MB."
         );
     }
 
-    return resizeImage(
-        file,
-        1280
-    );
+    return resizeImage(file, 1280);
 }
 
-function resizeImage(
-    file,
-    maxDimension
-) {
+function resizeImage(file, maxDimension) {
     return new Promise(
         (resolve, reject) => {
-            const reader =
-                new FileReader();
+            const reader = new FileReader();
 
             reader.onerror =
                 () =>
@@ -927,8 +824,7 @@ function resizeImage(
                     );
 
             reader.onload = () => {
-                const image =
-                    new Image();
+                const image = new Image();
 
                 image.onerror =
                     () =>
@@ -938,86 +834,77 @@ function resizeImage(
                             )
                         );
 
-                image.onload =
-                    () => {
-                        const scale =
-                            Math.min(
-                                1,
-                                maxDimension /
-                                    Math.max(
-                                        image.width,
-                                        image.height
-                                    )
-                            );
-
-                        const canvas =
-                            document.createElement(
-                                "canvas"
-                            );
-
-                        canvas.width =
-                            Math.max(
-                                1,
-                                Math.round(
-                                    image.width *
-                                        scale
+                image.onload = () => {
+                    const scale =
+                        Math.min(
+                            1,
+                            maxDimension /
+                                Math.max(
+                                    image.width,
+                                    image.height
                                 )
-                            );
-
-                        canvas.height =
-                            Math.max(
-                                1,
-                                Math.round(
-                                    image.height *
-                                        scale
-                                )
-                            );
-
-                        const context =
-                            canvas.getContext(
-                                "2d"
-                            );
-
-                        if (!context) {
-                            reject(
-                                new Error(
-                                    "Image processing is unavailable."
-                                )
-                            );
-
-                            return;
-                        }
-
-                        context.drawImage(
-                            image,
-                            0,
-                            0,
-                            canvas.width,
-                            canvas.height
                         );
 
-                        resolve(
-                            canvas.toDataURL(
-                                "image/jpeg",
-                                0.85
+                    const canvas =
+                        document.createElement(
+                            "canvas"
+                        );
+
+                    canvas.width =
+                        Math.max(
+                            1,
+                            Math.round(
+                                image.width * scale
                             )
                         );
-                    };
 
-                image.src =
-                    reader.result;
+                    canvas.height =
+                        Math.max(
+                            1,
+                            Math.round(
+                                image.height * scale
+                            )
+                        );
+
+                    const context =
+                        canvas.getContext("2d");
+
+                    if (!context) {
+                        reject(
+                            new Error(
+                                "Image processing is unavailable."
+                            )
+                        );
+
+                        return;
+                    }
+
+                    context.drawImage(
+                        image,
+                        0,
+                        0,
+                        canvas.width,
+                        canvas.height
+                    );
+
+                    resolve(
+                        canvas.toDataURL(
+                            "image/jpeg",
+                            0.85
+                        )
+                    );
+                };
+
+                image.src = reader.result;
             };
 
-            reader.readAsDataURL(
-                file
-            );
+            reader.readAsDataURL(file);
         }
     );
 }
 
 function renderImagePreview() {
-    const container =
-        $("#imagePreview");
+    const container = $("#imagePreview");
 
     if (!container) {
         return;
@@ -1030,44 +917,29 @@ function renderImagePreview() {
     }
 
     const wrapper =
-        document.createElement(
-            "div"
-        );
+        document.createElement("div");
 
     wrapper.className =
         "image-preview-item";
 
     const image =
-        document.createElement(
-            "img"
-        );
+        document.createElement("img");
 
-    image.src =
-        selectedImage;
-
-    image.alt =
-        "Selected image";
+    image.src = selectedImage;
+    image.alt = "Selected image";
 
     const label =
-        document.createElement(
-            "span"
-        );
+        document.createElement("span");
 
-    label.textContent =
-        "Image attached";
+    label.textContent = "Image attached";
 
     const remove =
-        document.createElement(
-            "button"
-        );
+        document.createElement("button");
 
     remove.type = "button";
-
     remove.className =
         "image-preview-remove";
-
-    remove.textContent =
-        "×";
+    remove.textContent = "×";
 
     remove.setAttribute(
         "aria-label",
@@ -1085,21 +957,16 @@ function renderImagePreview() {
         remove
     );
 
-    container.appendChild(
-        wrapper
-    );
+    container.appendChild(wrapper);
 }
 
 function clearSelectedImage() {
-    selectedImage =
-        null;
-
+    selectedImage = null;
     renderImagePreview();
 }
 
 function clearComposer() {
-    const input =
-        $("#userInput");
+    const input = $("#userInput");
 
     if (input) {
         input.value = "";
@@ -1129,9 +996,7 @@ function newChat() {
 
     renderConversation();
 
-    showToast(
-        "New chat started."
-    );
+    showToast("New chat started.");
 }
 
 function loadState() {
@@ -1183,14 +1048,12 @@ function loadState() {
         courses = [];
     }
 
-    if (
-        !Array.isArray(posts)
-    ) {
-        posts =
-            cloneDefaultPosts();
-
+    if (!Array.isArray(posts)) {
+        posts = cloneDefaultPosts();
         savePosts();
     }
+
+    trimConversation();
 }
 
 function saveConversation() {
@@ -1280,8 +1143,7 @@ function bindExplore() {
                 $("#exploreInterestsInput");
 
             if (input) {
-                input.value =
-                    interests;
+                input.value = interests;
             }
 
             openModal(
@@ -1326,18 +1188,15 @@ function bindExplore() {
                         button.dataset.category;
 
                     $$(".explore-tab")
-                        .forEach(
-                            tab => {
-                                const active =
-                                    tab ===
-                                    button;
+                        .forEach(tab => {
+                            const active =
+                                tab === button;
 
-                                tab.classList.toggle(
-                                    "active",
-                                    active
-                                );
-                            }
-                        );
+                            tab.classList.toggle(
+                                "active",
+                                active
+                            );
+                        });
 
                     renderExplore();
                 }
@@ -1354,27 +1213,17 @@ function bindExplore() {
     );
 }
 
-function renderExplore(
-    shuffle = false
-) {
-    const feed =
-        $("#reelsFeed");
-
-    const empty =
-        $("#exploreEmpty");
+function renderExplore(shuffle = false) {
+    const feed = $("#reelsFeed");
+    const empty = $("#exploreEmpty");
 
     if (!feed) {
         return;
     }
 
-    let reels = [
-        ...REELS
-    ];
+    let reels = [...REELS];
 
-    if (
-        currentCategory !==
-        "for-you"
-    ) {
+    if (currentCategory !== "for-you") {
         reels =
             reels.filter(
                 reel =>
@@ -1384,36 +1233,26 @@ function renderExplore(
     }
 
     if (
-        currentCategory ===
-            "for-you" &&
+        currentCategory === "for-you" &&
         interests
     ) {
         const words =
             interests
                 .toLowerCase()
-                .split(
-                    /[,\s]+/
-                )
+                .split(/[,\s]+/)
                 .filter(Boolean);
 
         reels.sort(
             (a, b) =>
-                scoreReel(
-                    b,
-                    words
-                ) -
-                scoreReel(
-                    a,
-                    words
-                )
+                scoreReel(b, words) -
+                scoreReel(a, words)
         );
     }
 
     if (shuffle) {
         reels.sort(
             () =>
-                Math.random() -
-                0.5
+                Math.random() - 0.5
         );
     }
 
@@ -1422,25 +1261,19 @@ function renderExplore(
     reels.forEach(
         reel =>
             feed.appendChild(
-                createReelElement(
-                    reel
-                )
+                createReelElement(reel)
             )
     );
 
     if (empty) {
-        empty.hidden =
-            reels.length > 0;
+        empty.hidden = reels.length > 0;
     }
 
     renderPosts();
     updateInterestText();
 }
 
-function scoreReel(
-    reel,
-    words
-) {
+function scoreReel(reel, words) {
     const text = [
         reel.title,
         reel.description,
@@ -1454,30 +1287,19 @@ function scoreReel(
     return words.reduce(
         (score, word) =>
             score +
-            (text.includes(
-                word
-            )
-                ? 1
-                : 0),
+            (text.includes(word) ? 1 : 0),
         0
     );
 }
 
-function createReelElement(
-    reel
-) {
+function createReelElement(reel) {
     const article =
-        document.createElement(
-            "article"
-        );
+        document.createElement("article");
 
-    article.className =
-        "reel-card";
+    article.className = "reel-card";
 
     const media =
-        document.createElement(
-            "div"
-        );
+        document.createElement("div");
 
     media.className =
         `reel-media reel-placeholder-${escapeClass(
@@ -1485,9 +1307,7 @@ function createReelElement(
         )}`;
 
     const mediaContent =
-        document.createElement(
-            "div"
-        );
+        document.createElement("div");
 
     mediaContent.className =
         "reel-placeholder-content";
@@ -1496,17 +1316,12 @@ function createReelElement(
         `<span class="reel-ai-badge">AI PICK</span>`;
 
     const title =
-        document.createElement(
-            "h2"
-        );
+        document.createElement("h2");
 
-    title.textContent =
-        reel.title;
+    title.textContent = reel.title;
 
     const subtitle =
-        document.createElement(
-            "p"
-        );
+        document.createElement("p");
 
     subtitle.textContent =
         interests
@@ -1523,49 +1338,33 @@ function createReelElement(
     );
 
     const info =
-        document.createElement(
-            "div"
-        );
+        document.createElement("div");
 
-    info.className =
-        "reel-info";
+    info.className = "reel-info";
 
     const creator =
-        document.createElement(
-            "div"
-        );
+        document.createElement("div");
 
-    creator.className =
-        "reel-creator";
+    creator.className = "reel-creator";
 
     const avatar =
-        document.createElement(
-            "div"
-        );
+        document.createElement("div");
 
-    avatar.className =
-        "reel-avatar";
-
+    avatar.className = "reel-avatar";
     avatar.textContent =
         reel.creatorInitial;
 
     const creatorText =
-        document.createElement(
-            "div"
-        );
+        document.createElement("div");
 
     const creatorName =
-        document.createElement(
-            "strong"
-        );
+        document.createElement("strong");
 
     creatorName.textContent =
         reel.creator;
 
     const creatorTag =
-        document.createElement(
-            "span"
-        );
+        document.createElement("span");
 
     creatorTag.textContent =
         reel.tag;
@@ -1581,9 +1380,7 @@ function createReelElement(
     );
 
     const description =
-        document.createElement(
-            "p"
-        );
+        document.createElement("p");
 
     description.className =
         "reel-description";
@@ -1592,52 +1389,32 @@ function createReelElement(
         reel.description;
 
     const actions =
-        document.createElement(
-            "div"
-        );
+        document.createElement("div");
 
     actions.className =
         "reel-actions";
 
     const like =
-        createActionButton(
-            "♡",
-            "Like"
-        );
+        createActionButton("♡", "Like");
 
     const comment =
-        createActionButton(
-            "◌",
-            "Comment"
-        );
+        createActionButton("◌", "Comment");
 
     const share =
-        createActionButton(
-            "↗",
-            "Share"
-        );
+        createActionButton("↗", "Share");
 
     const save =
-        createActionButton(
-            "⌑",
-            ""
-        );
+        createActionButton("▣", "");
 
-    save.classList.add(
-        "reel-save"
-    );
+    save.classList.add("reel-save");
 
     like.addEventListener(
         "click",
         () => {
-            like.classList.toggle(
-                "active"
-            );
+            like.classList.toggle("active");
 
             like.firstChild.textContent =
-                like.classList.contains(
-                    "active"
-                )
+                like.classList.contains("active")
                     ? "♥ "
                     : "♡ ";
         }
@@ -1659,9 +1436,7 @@ function createReelElement(
                 `${reel.title} — ${reel.description}`;
 
             const shared =
-                await shareText(
-                    text
-                );
+                await shareText(text);
 
             showToast(
                 shared
@@ -1674,16 +1449,12 @@ function createReelElement(
     save.addEventListener(
         "click",
         () => {
-            save.classList.toggle(
-                "active"
-            );
+            save.classList.toggle("active");
 
             save.firstChild.textContent =
-                save.classList.contains(
-                    "active"
-                )
-                    ? "▣ "
-                    : "⌑ ";
+                save.classList.contains("active")
+                    ? "■ "
+                    : "▣ ";
         }
     );
 
@@ -1708,14 +1479,9 @@ function createReelElement(
     return article;
 }
 
-function createActionButton(
-    icon,
-    label
-) {
+function createActionButton(icon, label) {
     const button =
-        document.createElement(
-            "button"
-        );
+        document.createElement("button");
 
     button.type = "button";
 
@@ -1727,24 +1493,18 @@ function createActionButton(
 
     if (label) {
         const span =
-            document.createElement(
-                "span"
-            );
+            document.createElement("span");
 
-        span.textContent =
-            label;
+        span.textContent = label;
 
-        button.appendChild(
-            span
-        );
+        button.appendChild(span);
     }
 
     return button;
 }
 
 function renderPosts() {
-    const grid =
-        $("#postGrid");
+    const grid = $("#postGrid");
 
     if (!grid) {
         return;
@@ -1758,21 +1518,12 @@ function renderPosts() {
     }
 
     const filtered =
-        currentCategory ===
-        "for-you"
+        currentCategory === "for-you"
             ? posts
             : posts.filter(
                   post =>
                       post.category ===
-                          currentCategory ||
-                      currentCategory ===
-                          "learning"
-                          ? post.category ===
-                            "learning"
-                          : currentCategory ===
-                                "for-you"
-                              ? true
-                              : false
+                      currentCategory
               );
 
     if (!filtered.length) {
@@ -1792,25 +1543,18 @@ function renderPosts() {
 
 function createPostCard(post) {
     const article =
-        document.createElement(
-            "article"
-        );
+        document.createElement("article");
 
-    article.className =
-        "post-card";
+    article.className = "post-card";
 
     const header =
-        document.createElement(
-            "div"
-        );
+        document.createElement("div");
 
     header.className =
         "post-card-header";
 
     const avatar =
-        document.createElement(
-            "div"
-        );
+        document.createElement("div");
 
     avatar.className =
         "post-card-avatar";
@@ -1819,25 +1563,19 @@ function createPostCard(post) {
         post.avatar;
 
     const user =
-        document.createElement(
-            "div"
-        );
+        document.createElement("div");
 
     user.className =
         "post-card-user";
 
     const name =
-        document.createElement(
-            "strong"
-        );
+        document.createElement("strong");
 
     name.textContent =
         post.name;
 
     const time =
-        document.createElement(
-            "span"
-        );
+        document.createElement("span");
 
     time.textContent =
         post.time;
@@ -1853,34 +1591,26 @@ function createPostCard(post) {
     );
 
     const title =
-        document.createElement(
-            "h3"
-        );
+        document.createElement("h3");
 
     title.textContent =
         post.title ||
         "Community post";
 
     const body =
-        document.createElement(
-            "p"
-        );
+        document.createElement("p");
 
     body.textContent =
         post.text;
 
     const footer =
-        document.createElement(
-            "div"
-        );
+        document.createElement("div");
 
     footer.className =
         "post-card-footer";
 
     const like =
-        document.createElement(
-            "button"
-        );
+        document.createElement("button");
 
     like.type = "button";
 
@@ -1891,9 +1621,7 @@ function createPostCard(post) {
         "click",
         () => {
             post.likes =
-                Number(
-                    post.likes || 0
-                ) + 1;
+                Number(post.likes || 0) + 1;
 
             savePosts();
 
@@ -1903,9 +1631,7 @@ function createPostCard(post) {
     );
 
     const share =
-        document.createElement(
-            "button"
-        );
+        document.createElement("button");
 
     share.type = "button";
     share.textContent =
@@ -1918,9 +1644,7 @@ function createPostCard(post) {
                 `${post.title || "Wor3do post"} — ${post.text}`
             );
 
-            showToast(
-                "Post copied."
-            );
+            showToast("Post copied.");
         }
     );
 
@@ -1963,12 +1687,8 @@ function bindCourses() {
         "keydown",
         event => {
             if (
-                event.key ===
-                    "Enter" &&
-                (
-                    event.ctrlKey ||
-                    event.metaKey
-                )
+                event.key === "Enter" &&
+                (event.ctrlKey || event.metaKey)
             ) {
                 event.preventDefault();
                 createCourse();
@@ -2001,11 +1721,8 @@ async function createCourse() {
         return;
     }
 
-    button.disabled =
-        true;
-
-    button.textContent =
-        "Creating...";
+    button.disabled = true;
+    button.textContent = "Creating...";
 
     try {
         const prompt =
@@ -2026,23 +1743,18 @@ async function createCourse() {
                         JSON.stringify({
                             messages: [
                                 {
-                                    role:
-                                        "user",
-                                    content:
-                                        prompt
+                                    role: "user",
+                                    content: prompt
                                 }
                             ],
-                            message:
-                                prompt
+                            message: prompt
                         })
                 },
                 60000
             );
 
         const data =
-            await parseResponse(
-                response
-            );
+            await parseResponse(response);
 
         if (!response.ok) {
             throw new Error(
@@ -2062,8 +1774,7 @@ async function createCourse() {
         }
 
         const course = {
-            id:
-                createId(),
+            id: createId(),
             title:
                 extractCourseTitle(
                     output,
@@ -2071,38 +1782,28 @@ async function createCourse() {
                 ),
             topic,
             level,
-            content:
-                output,
-            createdAt:
-                Date.now()
+            content: output,
+            createdAt: Date.now()
         };
 
-        courses.unshift(
-            course
-        );
+        courses.unshift(course);
 
         saveCourses();
         renderCourses();
 
         topicInput.value = "";
 
-        if (
-            settings.courseNotifications
-        ) {
+        if (settings.courseNotifications) {
             showToast(
                 "Course created successfully."
             );
         }
     } catch (error) {
         showToast(
-            friendlyError(
-                error
-            )
+            friendlyError(error)
         );
     } finally {
-        button.disabled =
-            false;
-
+        button.disabled = false;
         button.textContent =
             "Create course";
     }
@@ -2123,9 +1824,7 @@ function renderCourses() {
 
     if (count) {
         count.textContent =
-            String(
-                courses.length
-            );
+            String(courses.length);
     }
 
     if (!courses.length) {
@@ -2148,143 +1847,105 @@ function renderCourses() {
         return;
     }
 
-    courses.forEach(
-        course => {
-            const item =
-                document.createElement(
-                    "article"
-                );
+    courses.forEach(course => {
+        const item =
+            document.createElement("article");
 
-            item.className =
-                "course-item";
+        item.className =
+            "course-item";
 
-            const header =
-                document.createElement(
-                    "div"
-                );
+        const header =
+            document.createElement("div");
 
-            header.className =
-                "course-item-header";
+        header.className =
+            "course-item-header";
 
-            const title =
-                document.createElement(
-                    "h3"
-                );
+        const title =
+            document.createElement("h3");
 
-            title.textContent =
-                course.title;
+        title.textContent =
+            course.title;
 
-            const meta =
-                document.createElement(
-                    "p"
-                );
+        const meta =
+            document.createElement("p");
 
-            meta.textContent =
-                `${capitalize(
-                    course.level
-                )} · ${formatDate(
-                    course.createdAt
-                )}`;
+        meta.textContent =
+            `${capitalize(course.level)} · ${formatDate(course.createdAt)}`;
 
-            header.append(
-                title
+        header.append(title);
+
+        const headerWrap =
+            document.createElement("div");
+
+        headerWrap.append(header);
+
+        const description =
+            document.createElement("div");
+
+        description.className =
+            "course-item-description";
+
+        description.textContent =
+            trimText(
+                course.content,
+                180
             );
 
-            const headerWrap =
-                document.createElement(
-                    "div"
-                );
+        const actions =
+            document.createElement("div");
 
-            headerWrap.append(
-                header
-            );
+        actions.className =
+            "course-item-actions";
 
-            const description =
-                document.createElement(
-                    "div"
-                );
+        const open =
+            document.createElement("button");
 
-            description.className =
-                "course-item-description";
+        open.type = "button";
+        open.textContent =
+            "Open course";
 
-            description.textContent =
-                trimText(
-                    course.content,
-                    180
-                );
+        open.addEventListener(
+            "click",
+            () =>
+                openCourseModal(course)
+        );
 
-            const actions =
-                document.createElement(
-                    "div"
-                );
+        const deleteButton =
+            document.createElement("button");
 
-            actions.className =
-                "course-item-actions";
+        deleteButton.type = "button";
+        deleteButton.className =
+            "delete-course";
 
-            const open =
-                document.createElement(
-                    "button"
-                );
+        deleteButton.textContent =
+            "Delete";
 
-            open.type = "button";
+        deleteButton.addEventListener(
+            "click",
+            () =>
+                deleteCourse(course.id)
+        );
 
-            open.textContent =
-                "Open course";
+        actions.append(
+            open,
+            deleteButton
+        );
 
-            open.addEventListener(
-                "click",
-                () =>
-                    openCourseModal(
-                        course
-                    )
-            );
+        item.append(
+            headerWrap,
+            meta,
+            description,
+            actions
+        );
 
-            const deleteButton =
-                document.createElement(
-                    "button"
-                );
-
-            deleteButton.type =
-                "button";
-
-            deleteButton.className =
-                "delete-course";
-
-            deleteButton.textContent =
-                "Delete";
-
-            deleteButton.addEventListener(
-                "click",
-                () =>
-                    deleteCourse(
-                        course.id
-                    )
-            );
-
-            actions.append(
-                open,
-                deleteButton
-            );
-
-            item.append(
-                headerWrap,
-                meta,
-                description,
-                actions
-            );
-
-            list.appendChild(
-                item
-            );
-        }
-    );
+        list.appendChild(item);
+    });
 }
 
 function deleteCourse(id) {
     const course =
         courses.find(
-            item =>
-                item.id === id
+            item => item.id === id
         );
 
     if (!course) {
@@ -2301,62 +1962,39 @@ function deleteCourse(id) {
 
     courses =
         courses.filter(
-            item =>
-                item.id !== id
+            item => item.id !== id
         );
 
     saveCourses();
     renderCourses();
 
-    showToast(
-        "Course deleted."
-    );
+    showToast("Course deleted.");
 }
 
-function openCourseModal(
-    course
-) {
+function openCourseModal(course) {
     $("#courseModalTitle").textContent =
         course.title;
 
     $("#courseModalMeta").textContent =
-        `${capitalize(
-            course.level
-        )} · ${formatDate(
-            course.createdAt
-        )}`;
+        `${capitalize(course.level)} · ${formatDate(course.createdAt)}`;
 
     $("#courseModalContent").textContent =
         course.content;
 
-    openModal(
-        "courseModal"
-    );
+    openModal("courseModal");
 }
 
-function extractCourseTitle(
-    content,
-    fallback
-) {
+function extractCourseTitle(content, fallback) {
     const firstLine =
         String(content)
             .split("\n")
-            .map(line =>
-                line.trim()
-            )
-            .find(Boolean) ||
-        "";
+            .map(line => line.trim())
+            .find(Boolean) || "";
 
     const clean =
         firstLine
-            .replace(
-                /^#+\s*/,
-                ""
-            )
-            .replace(
-                /^title\s*:\s*/i,
-                ""
-            )
+            .replace(/^#+\s*/, "")
+            .replace(/^title\s*:\s*/i, "")
             .trim();
 
     if (
@@ -2370,52 +2008,50 @@ function extractCourseTitle(
 }
 
 function bindSettings() {
-    $$(".settings-nav-item")
-        .forEach(button => {
+    $$(".settings-nav-item").forEach(
+        button => {
             button.addEventListener(
                 "click",
                 () => {
                     setSettingsTab(
-                        button.dataset
-                            .settingsTab
+                        button.dataset.settingsTab
                     );
                 }
             );
-        });
+        }
+    );
 
-    $$("[data-setting]")
-        .forEach(button => {
+    $$("[data-setting]").forEach(
+        button => {
             button.addEventListener(
                 "click",
                 () => {
                     toggleSetting(
-                        button.dataset
-                            .setting
+                        button.dataset.setting
                     );
                 }
             );
-        });
+        }
+    );
 
-    $$("[data-theme-choice]")
-        .forEach(button => {
+    $$("[data-theme-choice]").forEach(
+        button => {
             button.addEventListener(
                 "click",
                 () => {
                     settings.theme =
-                        button.dataset
-                            .themeChoice;
+                        button.dataset.themeChoice;
 
                     saveSettings();
                     applyTheme();
 
                     showToast(
-                        `${capitalize(
-                            settings.theme
-                        )} theme enabled.`
+                        `${capitalize(settings.theme)} theme enabled.`
                     );
                 }
             );
-        });
+        }
+    );
 
     $("#saveProfileButton")?.addEventListener(
         "click",
@@ -2428,14 +2064,11 @@ function bindSettings() {
     );
 }
 
-function setSettingsTab(
-    tab
-) {
-    $$(".settings-nav-item")
-        .forEach(button => {
+function setSettingsTab(tab) {
+    $$(".settings-nav-item").forEach(
+        button => {
             const active =
-                button.dataset
-                    .settingsTab ===
+                button.dataset.settingsTab ===
                 tab;
 
             button.classList.toggle(
@@ -2453,13 +2086,13 @@ function setSettingsTab(
                     "aria-current"
                 );
             }
-        });
+        }
+    );
 
-    $$(".settings-section")
-        .forEach(section => {
+    $$(".settings-section").forEach(
+        section => {
             const active =
-                section.dataset
-                    .settingsSection ===
+                section.dataset.settingsSection ===
                 tab;
 
             section.classList.toggle(
@@ -2467,14 +2100,12 @@ function setSettingsTab(
                 active
             );
 
-            section.hidden =
-                !active;
-        });
+            section.hidden = !active;
+        }
+    );
 }
 
-function toggleSetting(
-    key
-) {
+function toggleSetting(key) {
     if (
         !Object.prototype.hasOwnProperty.call(
             settings,
@@ -2514,13 +2145,12 @@ function toggleSetting(
 }
 
 function updateSettingsUI() {
-    $$("[data-setting]")
-        .forEach(button => {
+    $$("[data-setting]").forEach(
+        button => {
             const enabled =
                 Boolean(
                     settings[
-                        button.dataset
-                            .setting
+                        button.dataset.setting
                     ]
                 );
 
@@ -2533,13 +2163,13 @@ function updateSettingsUI() {
                 "aria-pressed",
                 String(enabled)
             );
-        });
+        }
+    );
 
-    $$("[data-theme-choice]")
-        .forEach(button => {
+    $$("[data-theme-choice]").forEach(
+        button => {
             const active =
-                button.dataset
-                    .themeChoice ===
+                button.dataset.themeChoice ===
                 settings.theme;
 
             button.classList.toggle(
@@ -2551,13 +2181,13 @@ function updateSettingsUI() {
                 "aria-pressed",
                 String(active)
             );
-        });
+        }
+    );
 }
 
 function applyTheme() {
     document.documentElement.dataset.theme =
-        settings.theme ===
-        "dark"
+        settings.theme === "dark"
             ? "dark"
             : "light";
 
@@ -2582,9 +2212,7 @@ function saveProfileFromForm() {
 
     renderConversation();
 
-    showToast(
-        "Profile saved."
-    );
+    showToast("Profile saved.");
 }
 
 function updateProfile() {
@@ -2596,23 +2224,35 @@ function updateProfile() {
         getInitials(name) ||
         "W";
 
-    $("#sidebarAvatar").textContent =
-        initials;
+    if ($("#sidebarAvatar")) {
+        $("#sidebarAvatar").textContent =
+            initials;
+    }
 
-    $("#settingsAvatar").textContent =
-        initials;
+    if ($("#settingsAvatar")) {
+        $("#settingsAvatar").textContent =
+            initials;
+    }
 
-    $("#sidebarProfileName").textContent =
-        name;
+    if ($("#sidebarProfileName")) {
+        $("#sidebarProfileName").textContent =
+            name;
+    }
 
-    $("#settingsProfileName").textContent =
-        name;
+    if ($("#settingsProfileName")) {
+        $("#settingsProfileName").textContent =
+            name;
+    }
 
-    $("#displayNameInput").value =
-        profile.name;
+    if ($("#displayNameInput")) {
+        $("#displayNameInput").value =
+            profile.name;
+    }
 
-    $("#aboutInput").value =
-        profile.about;
+    if ($("#aboutInput")) {
+        $("#aboutInput").value =
+            profile.about;
+    }
 }
 
 function clearLocalData() {
@@ -2624,18 +2264,14 @@ function clearLocalData() {
         return;
     }
 
-    Object.values(
-        STORAGE
-    ).forEach(key =>
-        localStorage.removeItem(
-            key
-        )
+    Object.values(STORAGE).forEach(
+        key =>
+            localStorage.removeItem(key)
     );
 
     conversation = [];
     courses = [];
-    posts =
-        cloneDefaultPosts();
+    posts = cloneDefaultPosts();
 
     profile = {
         ...DEFAULT_PROFILE
@@ -2658,9 +2294,7 @@ function clearLocalData() {
     updateProfile();
     applyTheme();
 
-    showToast(
-        "Local data cleared."
-    );
+    showToast("Local data cleared.");
 }
 
 function bindModals() {
@@ -2673,68 +2307,57 @@ function bindModals() {
             }
         );
 
-    $$(".modal-close")
-        .forEach(button => {
+    $$(".modal-close").forEach(
+        button => {
             button.addEventListener(
                 "click",
                 () => {
                     const modal =
-                        button.closest(
-                            ".modal"
-                        );
+                        button.closest(".modal");
 
                     if (modal) {
-                        closeModal(
-                            modal.id
-                        );
+                        closeModal(modal.id);
                     }
                 }
             );
-        });
+        }
+    );
 
-    $$("[data-modal-close]")
-        .forEach(button => {
+    $$("[data-modal-close]").forEach(
+        button => {
             button.addEventListener(
                 "click",
                 () => {
                     closeModal(
-                        button.dataset
-                            .modalClose
+                        button.dataset.modalClose
                     );
                 }
             );
-        });
+        }
+    );
 
-    $$(".modal-backdrop")
-        .forEach(backdrop => {
+    $$(".modal-backdrop").forEach(
+        backdrop => {
             backdrop.addEventListener(
                 "click",
                 () => {
                     const modal =
-                        backdrop.closest(
-                            ".modal"
-                        );
+                        backdrop.closest(".modal");
 
                     if (modal) {
-                        closeModal(
-                            modal.id
-                        );
+                        closeModal(modal.id);
                     }
                 }
             );
-        });
+        }
+    );
 
     document.addEventListener(
         "keydown",
         event => {
-            if (
-                event.key ===
-                "Escape"
-            ) {
+            if (event.key === "Escape") {
                 if (activeModal) {
-                    closeModal(
-                        activeModal
-                    );
+                    closeModal(activeModal);
                 }
 
                 closeMobileSidebar();
@@ -2757,54 +2380,38 @@ function publishPost() {
     }
 
     const post = {
-        id:
-            createId(),
+        id: createId(),
         name:
             profile.name ||
             "Wor3do User",
         avatar:
-            getInitials(
-                profile.name
-            ) || "W",
-        time:
-            "Just now",
-        title:
-            "Community post",
+            getInitials(profile.name) ||
+            "W",
+        time: "Just now",
+        title: "Community post",
         text,
-        category:
-            "for-you",
+        category: "for-you",
         likes: 0
     };
 
-    posts.unshift(
-        post
-    );
+    posts.unshift(post);
 
     savePosts();
 
-    $("#postText").value =
-        "";
+    $("#postText").value = "";
 
-    closeModal(
-        "createPostModal"
-    );
+    closeModal("createPostModal");
 
     renderPosts();
 
-    if (
-        settings.communityNotifications
-    ) {
-        showToast(
-            "Post published."
-        );
+    if (settings.communityNotifications) {
+        showToast("Post published.");
     }
 }
 
 function openModal(id) {
     const modal =
-        document.getElementById(
-            id
-        );
+        document.getElementById(id);
 
     if (!modal) {
         return;
@@ -2814,14 +2421,10 @@ function openModal(id) {
         activeModal &&
         activeModal !== id
     ) {
-        closeModal(
-            activeModal
-        );
+        closeModal(activeModal);
     }
 
-    modal.classList.add(
-        "open"
-    );
+    modal.classList.add("open");
 
     modal.setAttribute(
         "aria-hidden",
@@ -2832,8 +2435,7 @@ function openModal(id) {
         "modal-open"
     );
 
-    activeModal =
-        id;
+    activeModal = id;
 
     setTimeout(() => {
         modal
@@ -2846,26 +2448,20 @@ function openModal(id) {
 
 function closeModal(id) {
     const modal =
-        document.getElementById(
-            id
-        );
+        document.getElementById(id);
 
     if (!modal) {
         return;
     }
 
-    modal.classList.remove(
-        "open"
-    );
+    modal.classList.remove("open");
 
     modal.setAttribute(
         "aria-hidden",
         "true"
     );
 
-    if (
-        activeModal === id
-    ) {
+    if (activeModal === id) {
         activeModal = null;
     }
 
@@ -2880,73 +2476,52 @@ function closeModal(id) {
     }
 }
 
-async function shareText(
-    text
-) {
+async function shareText(text) {
     try {
-        if (
-            navigator.share
-        ) {
+        if (navigator.share) {
             await navigator.share({
-                title:
-                    "Wor3do",
+                title: "Wor3do",
                 text
             });
 
             return true;
         }
 
-        return await copyText(
-            text
-        );
+        return await copyText(text);
+
     } catch {
         return false;
     }
 }
 
-async function copyText(
-    text
-) {
+async function copyText(text) {
     try {
-        await navigator.clipboard.writeText(
-            text
-        );
+        await navigator.clipboard.writeText(text);
 
         return true;
     } catch {
         const textarea =
-            document.createElement(
-                "textarea"
-            );
+            document.createElement("textarea");
 
-        textarea.value =
-            text;
+        textarea.value = text;
 
         textarea.setAttribute(
             "readonly",
             ""
         );
 
-        textarea.style.position =
-            "fixed";
+        textarea.style.position = "fixed";
+        textarea.style.opacity = "0";
 
-        textarea.style.opacity =
-            "0";
-
-        document.body.appendChild(
-            textarea
-        );
+        document.body.appendChild(textarea);
 
         textarea.select();
 
-        let copied =
-            false;
+        let copied = false;
 
         try {
             copied =
-                document.execCommand(
-                    "copy"
-                );
+                document.execCommand("copy");
         } catch {}
 
         textarea.remove();
@@ -2955,9 +2530,7 @@ async function copyText(
     }
 }
 
-async function parseResponse(
-    response
-) {
+async function parseResponse(response) {
     const text =
         await response.text();
 
@@ -2966,43 +2539,26 @@ async function parseResponse(
     }
 
     try {
-        return JSON.parse(
-            text
-        );
+        return JSON.parse(text);
     } catch {
         return {
-            output:
-                text
+            output: text
         };
     }
 }
 
-function extractOutput(
-    data
-) {
-    if (
-        typeof data ===
-        "string"
-    ) {
+function extractOutput(data) {
+    if (typeof data === "string") {
         return data.trim();
     }
 
-    if (
-        Array.isArray(
-            data?.choices
-        )
-    ) {
-        const choice =
-            data.choices[0];
+    if (Array.isArray(data?.choices)) {
+        const choice = data.choices[0];
 
         const content =
-            choice?.message
-                ?.content;
+            choice?.message?.content;
 
-        if (
-            typeof content ===
-            "string"
-        ) {
+        if (typeof content === "string") {
             return content.trim();
         }
     }
@@ -3036,20 +2592,15 @@ function fetchWithTimeout(
         url,
         {
             ...options,
-            signal:
-                controller.signal
+            signal: controller.signal
         }
     ).finally(
         () =>
-            clearTimeout(
-                timer
-            )
+            clearTimeout(timer)
     );
 }
 
-function friendlyError(
-    error
-) {
+function friendlyError(error) {
     if (
         error?.name ===
         "AbortError"
@@ -3071,15 +2622,10 @@ function friendlyError(
     );
 }
 
-function readStorage(
-    key,
-    fallback
-) {
+function readStorage(key, fallback) {
     try {
         const value =
-            localStorage.getItem(
-                key
-            );
+            localStorage.getItem(key);
 
         return value !== null
             ? JSON.parse(value)
@@ -3089,16 +2635,11 @@ function readStorage(
     }
 }
 
-function writeStorage(
-    key,
-    value
-) {
+function writeStorage(key, value) {
     try {
         localStorage.setItem(
             key,
-            JSON.stringify(
-                value
-            )
+            JSON.stringify(value)
         );
 
         return true;
@@ -3107,12 +2648,8 @@ function writeStorage(
     }
 }
 
-function getInitials(
-    name
-) {
-    return String(
-        name || ""
-    )
+function getInitials(name) {
+    return String(name || "")
         .trim()
         .split(/\s+/)
         .filter(Boolean)
@@ -3125,9 +2662,7 @@ function getInitials(
         .join("");
 }
 
-function formatDate(
-    value
-) {
+function formatDate(value) {
     if (!value) {
         return "Recently";
     }
@@ -3141,31 +2676,20 @@ function formatDate(
                 year: "numeric"
             }
         ).format(
-            new Date(
-                value
-            )
+            new Date(value)
         );
     } catch {
         return "Recently";
     }
 }
 
-function trimText(
-    value,
-    length
-) {
+function trimText(value, length) {
     const text =
-        String(
-            value || ""
-        )
-            .replace(
-                /\s+/g,
-                " "
-            )
+        String(value || "")
+            .replace(/\s+/g, " ")
             .trim();
 
-    return text.length >
-        length
+    return text.length > length
         ? `${text.slice(
               0,
               length - 1
@@ -3173,13 +2697,9 @@ function trimText(
         : text;
 }
 
-function capitalize(
-    value
-) {
+function capitalize(value) {
     const text =
-        String(
-            value || ""
-        );
+        String(value || "");
 
     return (
         text.charAt(0).toUpperCase() +
@@ -3201,37 +2721,25 @@ function cloneDefaultPosts() {
     );
 }
 
-function escapeClass(
-    value
-) {
-    return String(
-        value || ""
-    ).replace(
+function escapeClass(value) {
+    return String(value || "").replace(
         /[^a-zA-Z0-9_-]/g,
         ""
     );
 }
 
-function showToast(
-    message
-) {
-    const toast =
-        $("#toast");
+function showToast(message) {
+    const toast = $("#toast");
 
     if (!toast) {
         return;
     }
 
-    toast.textContent =
-        message;
+    toast.textContent = message;
 
-    toast.classList.add(
-        "show"
-    );
+    toast.classList.add("show");
 
-    clearTimeout(
-        toastTimer
-    );
+    clearTimeout(toastTimer);
 
     toastTimer =
         setTimeout(
